@@ -34,7 +34,8 @@ namespace House.Commands
                         server.GetPlayerByName(sender.Name).PluginData["endhouse"] = true;
                         break;
                     default:
-                        throw new CommandError("Invalid house command!");
+                        server.GetPlayerByName(sender.Name).PluginData["starthouse"] = true;
+                        break;
                 }
             }
         }
