@@ -40,6 +40,7 @@ namespace House
             plugin = this;
 
             this.registerHook(Hooks.PLAYER_TILECHANGE);
+            this.registerHook(Hooks.PLAYER_CHEST);
 
             string pluginFolder = Statics.PluginPath + Path.DirectorySeparatorChar + "House";
             CreateDirectory(pluginFolder);
@@ -57,18 +58,7 @@ namespace House
 
             xmlFilename = pluginFolder + Path.DirectorySeparatorChar + xmlFilename;
             houseXML = new XmlDocument();
-//            try
-//            {
-                houseXML.Load(xmlFilename);
-                //XmlNodeList nodeList = houseXML.GetElementsByTagName("houses");
-                //nodeList[0].AppendChild(houseXML.CreateNode(System.Xml.XmlNodeType.Element, "house", "housePlugin"));
-                //houseXML.Save(pluginFolder + Path.DirectorySeparatorChar + xmlFilename);
-//            }
-//            catch
-//            {
-//                Program.tConsole.WriteLine("Missing " + xmlFilename + " file in " + pluginFolder + "! Disabling Plugin!");
-//                Disable();
-//            }
+            houseXML.Load(xmlFilename);
         }
 
         public override void Enable()
@@ -79,6 +69,7 @@ namespace House
         public override void Disable()
         {
             Program.tConsole.WriteLine(base.Name + " disabled.");
+            houseXML.Save(xmlFilename);
         }
 
         private static void CreateDirectory(string dirPath)
@@ -87,6 +78,17 @@ namespace House
             {
                 Directory.CreateDirectory(dirPath);
             }
+        }
+
+        public override void onPlayerOpenChest(PlayerChestOpenEvent Event)
+        {
+            Player player = Server.GetPlayerByName(Event.Sender.Name);
+            if (IsInsideAnotherHouse(player.Name, (int)player.Position.X / 16, (int)player.Position.Y / 16))
+            {
+                Event.Cancelled = true;
+                player.sendMessage("You cannot open this chest, it's inside someone else's house", chatColor);
+            }
+            base.onPlayerOpenChest(Event);
         }
 
         public override void onPlayerTileChange(PlayerTileChangeEvent Event)
@@ -246,9 +248,6 @@ namespace House
                     houseNode[NodeName]["y"].InnerXml = y.ToString();
                 }
             }
-
-            houseXML.Save(xmlFilename);
-            houseXML.Load(xmlFilename);
         }
     }
 }
