@@ -24,7 +24,7 @@ namespace House.Commands
             String cmd, param;
             int value;
             Player player = server.GetPlayerByName(sender.Name);
-            PlayerHouses playerHouse = House.plugin.playerHouses[House.plugin.GetPlayerHouseIndex(player.Name)];
+            PlayerHouses playerHouse;
             if (args.TryGetString(0, out cmd))
             {
                 switch (cmd.ToUpper())
@@ -177,6 +177,7 @@ namespace House.Commands
                     // LOCK
                     case "L":
                     case "LOCK":
+                        playerHouse = House.plugin.playerHouses[House.plugin.GetPlayerHouseIndex(player.Name)];
                         if (args.TryGetString(1, out param))
                         {
                             switch (param.ToUpper())
@@ -215,6 +216,7 @@ namespace House.Commands
                     // UNLOCK
                     case "UL":
                     case "UNLOCK":
+                        playerHouse = House.plugin.playerHouses[House.plugin.GetPlayerHouseIndex(player.Name)];
                         if (args.TryGetString(1, out param))
                         {
                             switch (param.ToUpper())

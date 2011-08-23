@@ -323,7 +323,6 @@ namespace House
                 Server.GetPlayerByName(PlayerName).sendMessage("Your house is above the maximum depth level, deleting house", chatColor);
                 playerHouse.Houses.RemoveAt(houseIndex);
             }
-
         }
 
         private void LoadHouseData()
