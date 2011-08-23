@@ -27,7 +27,6 @@ namespace House.Commands
                 switch (cmd.ToUpper())
                 {
                     case "START":
-                        House.plugin.CreateHouseNodeForPlayer(sender.Name);
                         server.GetPlayerByName(sender.Name).PluginData["starthouse"] = true;
                         break;
                     case "END":
