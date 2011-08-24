@@ -20,6 +20,7 @@ namespace House
 {
     public struct PlayerHouseCoords
     {
+        public string HouseName;
         public Point TopLeft, BottomRight;
     }
 
@@ -52,6 +53,7 @@ namespace House
         public int maxArea;
         public int minHeight;
         public int maxHeight;
+        public int maxHouses;
 
         public String xmlFilename = "house.xml";
         public String xmlNamespace = "housePlugin";
@@ -69,7 +71,7 @@ namespace House
             Name = "House";
             Description = "A plugin to allow players to define a safe area";
             Author = "amarriner";
-            Version = "0.1.1";
+            Version = "0.2";
             TDSMBuild = 31;
 
             plugin = this;
@@ -106,6 +108,7 @@ namespace House
             maxArea = properties.MaxArea;
             minHeight = properties.MinHeight;
             maxHeight = properties.MaxHeight;
+            maxHouses = properties.MaxHouses;
 
             LoadHouseData();
 
@@ -162,6 +165,8 @@ namespace House
             bool starthouse = player.PluginData.ContainsKey("starthouse") ? (bool)player.PluginData["starthouse"] : false;
             bool endhouse = player.PluginData.ContainsKey("endhouse") ? (bool)player.PluginData["endhouse"] : false;
             bool check = player.PluginData.ContainsKey("check") ? (bool)player.PluginData["check"] : false;
+            int houseIndex = player.PluginData.ContainsKey("houseIndex") ? (int)player.PluginData["houseIndex"] : -1;
+            string houseName = player.PluginData.ContainsKey("houseName") ? (string)player.PluginData["houseName"] : null;
 
             if (starthouse || endhouse)
             {
@@ -171,8 +176,8 @@ namespace House
 
                 if (!IsInsideAnotherHouse(player.Name, (int)Event.Position.X, (int)Event.Position.Y))
                 {
-                    UpdateCoordsForPlayer(player.Name, (int)Event.Position.X, (int)Event.Position.Y);
-                    player.sendMessage("You've set the " + cornerDesc + " corner of your house", chatColor);
+                    UpdateCoordsForPlayer(player.Name, (int)Event.Position.X, (int)Event.Position.Y, houseIndex);
+                    player.sendMessage("You've set the " + cornerDesc + " corner of house " + houseName, chatColor);
                     player.PluginData["starthouse"] = false;
                     player.PluginData["endhouse"] = false;
                 }
@@ -197,6 +202,24 @@ namespace House
             }
 
             base.onPlayerTileChange(Event);
+        }
+
+        public string GetHouseNameImInside(string PlayerName)
+        {
+            Player player = Server.GetPlayerByName(PlayerName);
+            int playerHouseIndex = GetPlayerHouseIndex(PlayerName);
+
+            if (playerHouseIndex < 0)
+                return null;
+
+            foreach (PlayerHouseCoords playerHouseCoord in playerHouses[playerHouseIndex].Houses)
+            {
+                if (player.Position.X / 16 >= playerHouseCoord.TopLeft.X && player.Position.X / 16 <= playerHouseCoord.BottomRight.X &&
+                    player.Position.Y / 16 >= playerHouseCoord.TopLeft.Y && player.Position.Y / 16 <= playerHouseCoord.BottomRight.Y)
+                    return playerHouseCoord.HouseName;
+            }
+
+            return null;
         }
 
         public bool IsInsideAnotherHouse(string PlayerName, int x, int y, int check = 0)
@@ -267,6 +290,32 @@ namespace House
             return -1;
         }
 
+        public int GetTotalPlayerHouses(string PlayerName)
+        {
+            int index = GetPlayerHouseIndex(PlayerName);
+            if (index >= 0)
+                return playerHouses[GetPlayerHouseIndex(PlayerName)].Houses.ToArray().Length;
+            else
+                return -1;
+        }
+
+        public int GetHouseCoordsIndexByName(string PlayerName, string HouseName)
+        {
+            int playerHouseIndex = GetPlayerHouseIndex(PlayerName);
+            if (playerHouseIndex < 0)
+                return -1;
+
+            for (int i = 0; i < playerHouses[playerHouseIndex].Houses.ToArray().Length; i++)
+            {
+                if (playerHouses[GetPlayerHouseIndex(PlayerName)].Houses[i].HouseName == HouseName)
+                {
+                    return i;
+                }
+            }
+
+            return -1;
+        }
+
         public void UpdateCoordsForPlayer(string PlayerName, int x, int y, int houseIndex = 0)
         {
             Player player = Server.GetPlayerByName(PlayerName);
@@ -274,6 +323,7 @@ namespace House
             bool endhouse = player.PluginData.ContainsKey("endhouse") ? (bool)player.PluginData["endhouse"] : false;
 
             CreatePlayerHouse(PlayerName);
+
             int playerIndex = GetPlayerHouseIndex(PlayerName);
 
             PlayerHouseCoords tempCoords;
@@ -281,6 +331,7 @@ namespace House
             if (playerHouses[playerIndex].Houses.Count == houseIndex)
             {
                 tempCoords = new PlayerHouseCoords();
+                tempCoords.HouseName = (string)player.PluginData["houseName"];
                 playerHouses[playerIndex].Houses.Add(tempCoords);
             }
             else
@@ -388,20 +439,32 @@ namespace House
                     switch (dataNode.Name.ToUpper())
                     {
                         case "HOUSES":
-                            playerHouseCoords = new PlayerHouseCoords();
-
                             // Loop through house data
+                            int houseCount = 0;
                             houseEnum = dataNode.ChildNodes.GetEnumerator();
                             while (houseEnum.MoveNext())
                             {
+                                playerHouseCoords = new PlayerHouseCoords();
+
                                 houseNode = (XmlNode)houseEnum.Current;
+                                for (int i = 0; i < houseNode.Attributes.Count; i++)
+                                {
+                                    if (houseNode.Attributes[i].Name.ToUpper() == "NAME")
+                                        playerHouseCoords.HouseName = houseNode.Attributes[i].Value;
+                                }
+                                if (playerHouseCoords.HouseName == null)
+                                    playerHouseCoords.HouseName = "house" + houseCount;
+
                                 playerHouseCoords.TopLeft.X = Int32.Parse(houseNode["topleft"]["x"].InnerXml);
                                 playerHouseCoords.TopLeft.Y = Int32.Parse(houseNode["topleft"]["y"].InnerXml);
                                 playerHouseCoords.BottomRight.X = Int32.Parse(houseNode["bottomright"]["x"].InnerXml);
                                 playerHouseCoords.BottomRight.Y = Int32.Parse(houseNode["bottomright"]["y"].InnerXml);
+
+                                playerHouse.Houses.Add(playerHouseCoords);
+
+                                houseCount++;
                             }
 
-                            playerHouse.Houses.Add(playerHouseCoords);
                             break;
                         case "LOCKCHESTS":
                             playerHouse.LockChests = Boolean.Parse(dataNode.InnerXml);
@@ -426,7 +489,7 @@ namespace House
             houseXML.AppendChild(dec);
             XmlNode playersNode = houseXML.CreateNode(XmlNodeType.Element, "players", xmlNamespace);
             XmlNode playerNode, houses, node, coord, x, y;
-            XmlAttribute playerAttribute;
+            XmlAttribute attr, playerAttribute;
 
             foreach (PlayerHouses playerHouse in playerHouses)
             {
@@ -449,6 +512,9 @@ namespace House
                 foreach (PlayerHouseCoords coords in playerHouse.Houses)
                 {
                     node = houseXML.CreateNode(XmlNodeType.Element, "house", xmlNamespace);
+                    attr = houseXML.CreateAttribute("name");
+                    attr.Value = coords.HouseName;
+                    node.Attributes.Append(attr);
 
                     coord = houseXML.CreateNode(XmlNodeType.Element, "topleft", xmlNamespace);
                     x = houseXML.CreateNode(XmlNodeType.Element, "x", xmlNamespace);

@@ -8,10 +8,12 @@ namespace House
 {
     public class Properties : PropertiesFile
     {
+        private const int DEFAULT_MAX_HOUSES = 1;
         private const int DEFAULT_MAX_AREA = 1000;
         private const int DEFAULT_MIN_HEIGHT = 175;
         private const int DEFAULT_MAX_HEIGHT = 1000;
 
+        private const String MAX_HOUSES = "maxhouses";
         private const String MAX_AREA = "maxarea";
         private const String MIN_HEIGHT = "minheight";
         private const String MAX_HEIGHT = "maxheight";
@@ -28,6 +30,19 @@ namespace House
             set
             {
                 setValue(MAX_AREA, value);
+            }
+        }
+
+        public int MaxHouses
+        {
+            get
+            {
+                return getValue(MAX_HOUSES, DEFAULT_MAX_HOUSES);
+            }
+
+            set
+            {
+                setValue(MAX_HOUSES, value);
             }
         }
 
