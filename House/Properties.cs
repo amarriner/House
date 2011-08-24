@@ -12,11 +12,13 @@ namespace House
         private const int DEFAULT_MAX_AREA = 1000;
         private const int DEFAULT_MIN_HEIGHT = 175;
         private const int DEFAULT_MAX_HEIGHT = 1000;
+        private const bool DEFAULT_PLAYERS_CAN_TELEPORT = false;
 
         private const String MAX_HOUSES = "maxhouses";
         private const String MAX_AREA = "maxarea";
         private const String MIN_HEIGHT = "minheight";
         private const String MAX_HEIGHT = "maxheight";
+        private const String PLAYERS_CAN_TELEPORT = "playerscanteleport";
 
         public Properties(String propertiesPath) : base(propertiesPath) { }
 
@@ -67,6 +69,18 @@ namespace House
             set
             {
                 setValue(MAX_HEIGHT, value);
+            }
+        }
+
+        public bool PlayersCanTeleport
+        {
+            get
+            {
+                return getValue(PLAYERS_CAN_TELEPORT, DEFAULT_PLAYERS_CAN_TELEPORT);
+            }
+            set
+            {
+                setValue(PLAYERS_CAN_TELEPORT, value);
             }
         }
     }

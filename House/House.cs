@@ -54,6 +54,7 @@ namespace House
         public int minHeight;
         public int maxHeight;
         public int maxHouses;
+        public bool playersCanTeleport;
 
         public String xmlFilename = "house.xml";
         public String xmlNamespace = "housePlugin";
@@ -109,6 +110,7 @@ namespace House
             minHeight = properties.MinHeight;
             maxHeight = properties.MaxHeight;
             maxHouses = properties.MaxHouses;
+            playersCanTeleport = properties.PlayersCanTeleport;
 
             LoadHouseData();
 

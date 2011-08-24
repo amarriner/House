@@ -21,10 +21,11 @@ namespace House.Commands
     {
         public static void house(Server server, ISender sender, ArgumentList args)
         {
-            String cmd, param;
+            String cmd, param, param2;
             int value, houseIndex;
             Player player = server.GetPlayerByName(sender.Name);
             PlayerHouses playerHouse;
+            PlayerHouseCoords pHC;
             if (args.TryGetString(0, out cmd))
             {
                 switch (cmd.ToUpper())
@@ -69,6 +70,14 @@ namespace House.Commands
                                     player.sendMessage("Valid properties are: MaxArea, MaxHeight, MinHeight, MaxHouses", House.plugin.chatColor);
                                     player.sendMessage("Must be OP to run this", House.plugin.chatColor);
                                     player.sendMessage("Abbreviations: s", House.plugin.chatColor);
+                                    break;
+                                case "T":
+                                case "TELEPORT":
+                                    player.sendMessage("/teleport <housename>", House.plugin.chatColor);
+                                    player.sendMessage("Teleport to your house called <housename>", House.plugin.chatColor);
+                                    if (!House.plugin.properties.PlayersCanTeleport)
+                                        player.sendMessage("Must be OP to run this", House.plugin.chatColor);
+                                    player.sendMessage("Abbreviations: t", House.plugin.chatColor);
                                     break;
                                 case "TL":
                                 case "TOPLEFT":
@@ -244,6 +253,7 @@ namespace House.Commands
                                         else
                                             throw new CommandError("Must specify an integer value for MaxArea!");
                                         break;
+
                                     case "MAXHOUSES":
                                         if (args.TryGetInt(2, out value))
                                         {
@@ -267,6 +277,7 @@ namespace House.Commands
                                         else
                                             throw new CommandError("Must specify an integer value for MinHeight!");
                                         break;
+
                                     case "MAXHEIGHT":
                                         if (args.TryGetInt(2, out value))
                                         {
@@ -278,6 +289,33 @@ namespace House.Commands
                                         else
                                             throw new CommandError("Must specify an integer value for MaxHeight!");
                                         break;
+
+                                    case "PLAYERSCANTELEPORT":
+                                        Program.tConsole.WriteLine("test1");
+                                        if (args.TryGetString(2, out param2))
+                                        {
+                                            Program.tConsole.WriteLine("test2");
+                                            if (param2.ToUpper() == "TRUE" || param2.ToUpper() == "FALSE")
+                                            {
+                                                Program.tConsole.WriteLine("test3");
+                                                House.plugin.properties.PlayersCanTeleport = Boolean.Parse(param2);
+                                                House.plugin.playersCanTeleport = Boolean.Parse(param2);
+                                                House.plugin.properties.Save();
+                                                player.sendMessage("You updated PlayersCanTeleport to " + param2, House.plugin.chatColor);
+                                            }
+                                            else
+                                            {
+                                                Program.tConsole.WriteLine("test4");
+                                                player.sendMessage("The playerscanteleport property must be either true or false", House.plugin.chatColor);
+                                            }
+                                        }
+                                        else
+                                        {
+                                            Program.tConsole.WriteLine("test5");
+                                            throw new CommandError("The playerscanteleport property must be either true or false");
+                                        }
+                                        break;
+
                                     default:
                                         throw new CommandError("Invalid set parameter!");
                                 }
@@ -339,6 +377,31 @@ namespace House.Commands
                         {
                             throw new CommandError("Invalid lock parameter");
                         }
+                        break;
+
+                    // TELEPORT
+                    case "T":
+                    case "TELEPORT":
+                        if (House.plugin.properties.PlayersCanTeleport)
+                        {
+                            if (args.TryGetString(1, out param))
+                            {
+                                houseIndex = House.plugin.GetHouseCoordsIndexByName(player.Name, param);
+                                if (houseIndex < 0)
+                                    player.sendMessage("You don't have a house called " + param, House.plugin.chatColor);
+                                else
+                                {
+                                    player.sendMessage("Teleporting to " + param, House.plugin.chatColor);
+                                    pHC = House.plugin.playerHouses[House.plugin.GetPlayerHouseIndex(player.Name)].Houses[houseIndex];
+                                    player.teleportTo(((pHC.TopLeft.X * 16) + (pHC.BottomRight.X * 16)) / 2, 
+                                                      ((pHC.TopLeft.Y * 16) + (pHC.BottomRight.Y * 16)) / 2);                                    
+                                }
+                            }
+                            else
+                                throw new CommandError("You must supply a house name to teleport to");
+                        }
+                        else
+                            player.sendMessage("Only OPs can teleport to houses", House.plugin.chatColor);
                         break;
 
                     // WHICH
