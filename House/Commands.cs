@@ -120,7 +120,7 @@ namespace House.Commands
                         else
                         {
                             player.sendMessage("VALID HOUSE COMMANDS:", House.plugin.chatColor);
-                            player.sendMessage("/house check, delete, end, list, lock, properties, set, start, unlock", House.plugin.chatColor);
+                            player.sendMessage("/house check, delete, end, list, lock, properties, set, start, unlock, which", House.plugin.chatColor);
                             player.sendMessage("Run /house ? <command> for more details on a particular command", House.plugin.chatColor);
                         }
                         break;
@@ -292,7 +292,7 @@ namespace House.Commands
                     case "LIST":
                         playerHouseIndex = House.plugin.GetPlayerHouseIndex(player.Name);
                         if (playerHouseIndex < 0)
-                            throw new CommandError("You don't have any houses yet");
+                            player.sendMessage("You don't have any houses yet", House.plugin.chatColor);
                         else
                         {
                             foreach (PlayerHouseCoords playerHouseCoord in House.plugin.playerHouses[playerHouseIndex].Houses)
