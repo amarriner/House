@@ -62,6 +62,8 @@ namespace House
         public List<PlayerHouses> playerHouses = new List<PlayerHouses>();
         public string pluginFolder;
 
+        public double lastTime;
+
         public override void Load()
         {
             Name = "House";
@@ -76,6 +78,7 @@ namespace House
             this.registerHook(Hooks.PLAYER_CHEST);
             this.registerHook(Hooks.PLAYER_EDITSIGN);
             this.registerHook(Hooks.DOOR_STATECHANGE);
+            this.registerHook(Hooks.TIME_CHANGED);
 
             AddCommand("h")
                 .WithAccessLevel(AccessLevel.PLAYER)
@@ -92,6 +95,8 @@ namespace House
 
         public override void Enable()
         {
+            lastTime = Server.time;
+
             pluginFolder = Statics.PluginPath + Path.DirectorySeparatorChar + "House";
             CreateDirectory(pluginFolder);
 
@@ -223,6 +228,17 @@ namespace House
             return false;
         }
 
+        public override void onTimeChange(TimeChangedEvent Event)
+        {
+            if (Math.Abs(Event.GetTime - lastTime) > 90000)
+            {
+                Program.tConsole.WriteLine("Saving house.xml");
+                SaveHouseData();
+                lastTime = Event.GetTime;
+            }
+ 	        base.onTimeChange(Event);
+        }
+
         public bool CreatePlayerHouse(string PlayerName, int houseIndex = 0)
         {
             foreach (PlayerHouses i in playerHouses)
@@ -293,35 +309,40 @@ namespace House
             PlayerHouses playerHouse = playerHouses[GetPlayerHouseIndex(PlayerName)];
             PlayerHouseCoords playerHouseCoords = playerHouse.Houses[houseIndex];
 
-            // Check for top left/bottom right reversed
-            if (playerHouseCoords.TopLeft.X > playerHouseCoords.BottomRight.X ||
-                playerHouseCoords.TopLeft.Y > playerHouseCoords.BottomRight.Y)
+            if (!((playerHouseCoords.TopLeft.X == 0 && playerHouseCoords.TopLeft.Y == 0) || 
+                  (playerHouseCoords.BottomRight.X == 0 && playerHouseCoords.BottomRight.Y == 0)))
             {
-                Server.GetPlayerByName(PlayerName).sendMessage("Top right corner is greater than bottom left, deleting house", chatColor);
-                playerHouse.Houses.RemoveAt(houseIndex);
-            }
+                // Check for top left/bottom right reversed
+                if (playerHouseCoords.TopLeft.X > playerHouseCoords.BottomRight.X ||
+                    playerHouseCoords.TopLeft.Y > playerHouseCoords.BottomRight.Y)
+                {
+                    Server.GetPlayerByName(PlayerName).sendMessage("Top right corner is greater than bottom left, deleting house " +
+                        playerHouseCoords.BottomRight.X + "," + playerHouseCoords.BottomRight.Y, chatColor);
+                    playerHouse.Houses.RemoveAt(houseIndex);
+                }
 
-            // Check area
-            int houseArea = (playerHouseCoords.BottomRight.X - playerHouseCoords.TopLeft.X) * 
-                (playerHouseCoords.BottomRight.Y - playerHouseCoords.TopLeft.Y);
-            if (houseArea > maxArea)
-            {
-                Server.GetPlayerByName(PlayerName).sendMessage("Your house exceeds the maximum area, deleting house", chatColor);
-                playerHouse.Houses.RemoveAt(houseIndex);
-            }
+                // Check area
+                int houseArea = (playerHouseCoords.BottomRight.X - playerHouseCoords.TopLeft.X) *
+                    (playerHouseCoords.BottomRight.Y - playerHouseCoords.TopLeft.Y);
+                if (houseArea > maxArea)
+                {
+                    Server.GetPlayerByName(PlayerName).sendMessage("Your house exceeds the maximum area, deleting house", chatColor);
+                    playerHouse.Houses.RemoveAt(houseIndex);
+                }
 
-            // Check min height
-            if (playerHouseCoords.BottomRight.Y < minHeight)
-            {
-                Server.GetPlayerByName(PlayerName).sendMessage("Your house is below the minimum depth level, deleting house", chatColor);
-                playerHouse.Houses.RemoveAt(houseIndex);
-            }
+                // Check min height
+                if (playerHouseCoords.BottomRight.Y < minHeight)
+                {
+                    Server.GetPlayerByName(PlayerName).sendMessage("Your house is below the minimum depth level, deleting house", chatColor);
+                    playerHouse.Houses.RemoveAt(houseIndex);
+                }
 
-            // Check max height
-            if (playerHouseCoords.BottomRight.Y < maxHeight)
-            {
-                Server.GetPlayerByName(PlayerName).sendMessage("Your house is above the maximum depth level, deleting house", chatColor);
-                playerHouse.Houses.RemoveAt(houseIndex);
+                // Check max height
+                if (playerHouseCoords.BottomRight.Y > maxHeight)
+                {
+                    Server.GetPlayerByName(PlayerName).sendMessage("Your house is above the maximum depth level, deleting house", chatColor);
+                    playerHouse.Houses.RemoveAt(houseIndex);
+                }
             }
         }
 
@@ -334,6 +355,17 @@ namespace House
             PlayerHouseCoords playerHouseCoords;
 
             xmlFilename = pluginFolder + Path.DirectorySeparatorChar + xmlFilename;
+            if (!File.Exists(xmlFilename))
+            {
+                houseXML = new XmlDocument();
+                XmlNode node = houseXML.CreateNode(XmlNodeType.XmlDeclaration, "xml", xmlNamespace);
+                houseXML.AppendChild(node);
+                node = houseXML.CreateNode(XmlNodeType.Element, "players", xmlNamespace);
+                houseXML.AppendChild(node);
+                houseXML.Save(xmlFilename);
+                Program.tConsole.WriteLine(houseXML.InnerText);
+            }
+
             houseXML.Load(xmlFilename);
 
             playerNodes = houseXML.GetElementsByTagName("player");
