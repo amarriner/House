@@ -69,7 +69,7 @@ namespace House
             Name = "House";
             Description = "A plugin to allow players to define a safe area";
             Author = "amarriner";
-            Version = "0.1";
+            Version = "0.1.1";
             TDSMBuild = 31;
 
             plugin = this;
