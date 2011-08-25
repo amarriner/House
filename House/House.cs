@@ -22,6 +22,15 @@ namespace House
     {
         public string HouseName;
         public Point TopLeft, BottomRight;
+        public List<string> Allowed;
+
+        public PlayerHouseCoords(string HouseName = null)
+        {
+            this.HouseName = HouseName;
+            this.TopLeft = new Point();
+            this.BottomRight = new Point();
+            this.Allowed = new List<string>();
+        }
     }
 
     public struct PlayerHouses
@@ -47,6 +56,7 @@ namespace House
         public static int CHECK_CHEST_LOCK = 1;
         public static int CHECK_DOOR_LOCK = 2;
         public static int CHECK_SIGN_LOCK = 3;
+        public static int CHECK_ALLOWED = 4;
 
         public static House plugin;
         public Properties properties;
@@ -55,6 +65,7 @@ namespace House
         public int maxHeight;
         public int maxHouses;
         public bool playersCanTeleport;
+        public bool playersCanMakeHouses;
 
         public String xmlFilename = "house.xml";
         public String xmlNamespace = "housePlugin";
@@ -72,7 +83,7 @@ namespace House
             Name = "House";
             Description = "A plugin to allow players to define a safe area";
             Author = "amarriner";
-            Version = "0.2";
+            Version = "0.3";
             TDSMBuild = 31;
 
             plugin = this;
@@ -111,6 +122,7 @@ namespace House
             maxHeight = properties.MaxHeight;
             maxHouses = properties.MaxHouses;
             playersCanTeleport = properties.PlayersCanTeleport;
+            playersCanMakeHouses = properties.PlayersCanMakeHouses;
 
             LoadHouseData();
 
@@ -235,6 +247,14 @@ namespace House
                         if (x >= houseCoords.TopLeft.X && x <= houseCoords.BottomRight.X &&
                             y >= houseCoords.TopLeft.Y && y <= houseCoords.BottomRight.Y)
                         {
+                            for (int i = 0; i < houseCoords.Allowed.Count; i++)
+                            {
+                                if (houseCoords.Allowed[i] == PlayerName)
+                                {
+                                    return false;
+                                }
+                            }
+
                             if (check == House.CHECK_CHEST_LOCK && !playerHouse.LockChests)
                                 return false;
 
@@ -332,8 +352,7 @@ namespace House
 
             if (playerHouses[playerIndex].Houses.Count == houseIndex)
             {
-                tempCoords = new PlayerHouseCoords();
-                tempCoords.HouseName = (string)player.PluginData["houseName"];
+                tempCoords = new PlayerHouseCoords((string)player.PluginData["houseName"]);
                 playerHouses[playerIndex].Houses.Add(tempCoords);
             }
             else
@@ -446,21 +465,33 @@ namespace House
                             houseEnum = dataNode.ChildNodes.GetEnumerator();
                             while (houseEnum.MoveNext())
                             {
-                                playerHouseCoords = new PlayerHouseCoords();
-
+                                string houseName = null;
                                 houseNode = (XmlNode)houseEnum.Current;
                                 for (int i = 0; i < houseNode.Attributes.Count; i++)
                                 {
                                     if (houseNode.Attributes[i].Name.ToUpper() == "NAME")
-                                        playerHouseCoords.HouseName = houseNode.Attributes[i].Value;
+                                        houseName = houseNode.Attributes[i].Value;
                                 }
-                                if (playerHouseCoords.HouseName == null)
-                                    playerHouseCoords.HouseName = "house" + houseCount;
+                                if (houseName == null)
+                                    houseName = "house" + houseCount;
+
+                                playerHouseCoords = new PlayerHouseCoords(houseName);
 
                                 playerHouseCoords.TopLeft.X = Int32.Parse(houseNode["topleft"]["x"].InnerXml);
                                 playerHouseCoords.TopLeft.Y = Int32.Parse(houseNode["topleft"]["y"].InnerXml);
                                 playerHouseCoords.BottomRight.X = Int32.Parse(houseNode["bottomright"]["x"].InnerXml);
                                 playerHouseCoords.BottomRight.Y = Int32.Parse(houseNode["bottomright"]["y"].InnerXml);
+
+                                for (int i = 0; i < houseNode.ChildNodes.Count; i++)
+                                {
+                                    if (houseNode.ChildNodes[i].Name.ToUpper() == "ALLOW")
+                                    {
+                                        for (int j = 0; j < houseNode.ChildNodes[i].ChildNodes.Count; j++)
+                                        {
+                                            playerHouseCoords.Allowed.Add(houseNode.ChildNodes[i].ChildNodes[j].InnerXml);
+                                        }
+                                    }
+                                }
 
                                 playerHouse.Houses.Add(playerHouseCoords);
 
@@ -535,6 +566,17 @@ namespace House
                     coord.AppendChild(x);
                     coord.AppendChild(y);
                     node.AppendChild(coord);
+
+                    XmlNode allow, allowed;
+                    allow = houseXML.CreateNode(XmlNodeType.Element, "allow", xmlNamespace);
+                    IEnumerator allowIenum = coords.Allowed.GetEnumerator();
+                    while (allowIenum.MoveNext())
+                    {
+                        allowed = houseXML.CreateNode(XmlNodeType.Element, "allowed", xmlNamespace);
+                        allowed.InnerXml = (string)allowIenum.Current;
+                        allow.AppendChild(allowed);
+                    }
+                    node.AppendChild(allow);
 
                     houses.AppendChild(node);
                 }
