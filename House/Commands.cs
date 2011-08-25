@@ -19,13 +19,80 @@ namespace House.Commands
 {
     class Commands
     {
+        public static void DeleteHouse(string PlayerName, string HouseName, Player Deleter)
+        {
+            int playerIndex = House.plugin.GetPlayerHouseIndex(PlayerName);
+            if (playerIndex < 0)
+            {
+                Deleter.sendMessage("Invalid player", House.plugin.chatColor);
+            }
+            else
+            {
+                int playerHouseIndex = House.plugin.GetPlayerHouseIndex(PlayerName);
+                if (playerHouseIndex < 0)
+                {
+                    if (PlayerName == Deleter.Name)
+                    {
+                        Deleter.sendMessage("You have no houses to delete", House.plugin.chatColor);
+                    }
+                    else
+                    {
+                        Deleter.sendMessage("There are no houses to delete for " + PlayerName, House.plugin.chatColor);
+                    }
+                }
+                else
+                {
+                    int coordsIndex = House.plugin.GetHouseCoordsIndexByName(PlayerName, HouseName);
+                    if (coordsIndex < 0)
+                        Deleter.sendMessage("There is no house called " + HouseName, House.plugin.chatColor);
+                    else
+                    {
+                        House.plugin.playerHouses[playerHouseIndex].Houses.RemoveAt(coordsIndex);
+                        Deleter.sendMessage("You've deleted the house called " + HouseName, House.plugin.chatColor);
+                    }
+                }
+            }
+        }
+
+        public static void TeleportToHouse(string PlayerName, string HouseName, Player Teleporter)
+        {
+            int playerIndex = House.plugin.GetPlayerHouseIndex(PlayerName);
+            if (playerIndex < 0)
+            {
+                Teleporter.sendMessage("Invalid player", House.plugin.chatColor);
+            }
+            else
+            {
+                if (House.plugin.properties.PlayersCanTeleport || Teleporter.Op)
+                {
+                    int houseIndex = House.plugin.GetHouseCoordsIndexByName(PlayerName, HouseName);
+                    if (houseIndex < 0)
+                    {
+                        if (PlayerName == Teleporter.Name)
+                            Teleporter.sendMessage("You don't have a house called " + HouseName, House.plugin.chatColor);
+                        else
+                            Teleporter.sendMessage(PlayerName + " doesn't have a house called " + HouseName, House.plugin.chatColor);
+                    }
+                    else
+                    {
+                        Teleporter.sendMessage("Teleporting to " + HouseName, House.plugin.chatColor);
+                        PlayerHouseCoords pHC = House.plugin.playerHouses[House.plugin.GetPlayerHouseIndex(PlayerName)].Houses[houseIndex];
+                        Teleporter.teleportTo(((pHC.TopLeft.X * 16) + (pHC.BottomRight.X * 16)) / 2,
+                                          ((pHC.TopLeft.Y * 16) + (pHC.BottomRight.Y * 16)) / 2);
+                    }
+                }
+                else
+                    Teleporter.sendMessage("Only OPs can teleport to houses", House.plugin.chatColor);
+            }
+        }
+
         public static void house(Server server, ISender sender, ArgumentList args)
         {
-            String cmd, param, param2;
+            String cmd, param, param2, houseName;
             int value, houseIndex;
             Player player = server.GetPlayerByName(sender.Name);
             PlayerHouses playerHouse;
-            PlayerHouseCoords pHC;
+            int playerHouseIndex;
             if (args.TryGetString(0, out cmd))
             {
                 switch (cmd.ToUpper())
@@ -121,6 +188,34 @@ namespace House.Commands
                                     player.sendMessage("Valid objects are: CHESTS, DOORS, and SIGNS", House.plugin.chatColor);
                                     player.sendMessage("Abbreviations: l", House.plugin.chatColor);
                                     break;
+                                case "OD":
+                                case "OPDELETE":
+                                    player.sendMessage("/house opdelete <player> <house>", House.plugin.chatColor);
+                                    player.sendMessage("Deletes <player>'s <house>", House.plugin.chatColor);
+                                    player.sendMessage("Must be OP to run this", House.plugin.chatColor);
+                                    player.sendMessage("Abbreviations: od", House.plugin.chatColor);
+                                    break;
+                                case "OI":
+                                case "OPLIST":
+                                    player.sendMessage("/house oplist <player>", House.plugin.chatColor);
+                                    player.sendMessage("Lists all houses for <player>", House.plugin.chatColor);
+                                    player.sendMessage("Must be OP to run this", House.plugin.chatColor);
+                                    player.sendMessage("Abbreviations: oi", House.plugin.chatColor);
+                                    break;
+                                case "OT":
+                                case "OPTELEPORT":
+                                    player.sendMessage("/house opteleport <player> <house>", House.plugin.chatColor);
+                                    player.sendMessage("Teleports to <player>'s <house>", House.plugin.chatColor);
+                                    player.sendMessage("Must be OP to run this", House.plugin.chatColor);
+                                    player.sendMessage("Abbreviations: oi", House.plugin.chatColor);
+                                    break;
+                                case "OW":
+                                case "OPWHICH":
+                                    player.sendMessage("/house opwhich", House.plugin.chatColor);
+                                    player.sendMessage("Returns the house you're standing in", House.plugin.chatColor);
+                                    player.sendMessage("Must be OP to run this", House.plugin.chatColor);
+                                    player.sendMessage("Abbreviations: ow", House.plugin.chatColor);
+                                    break;
                                 case "UL":
                                 case "UNLOCK":
                                     player.sendMessage("/house unlock <object>", House.plugin.chatColor);
@@ -207,25 +302,10 @@ namespace House.Commands
                     // DELETE
                     case "D":
                     case "DELETE":
-                        int playerHouseIndex = House.plugin.GetPlayerHouseIndex(player.Name);
-                        if (playerHouseIndex < 0)
-                            player.sendMessage("You don't have any houses to delete", House.plugin.chatColor);
+                        if (args.TryGetString(1, out param))
+                            DeleteHouse(player.Name, param, player);
                         else
-                        {
-                            if (args.TryGetString(1, out param))
-                            {
-                                int coordsIndex = House.plugin.GetHouseCoordsIndexByName(player.Name, param);
-                                if (coordsIndex < 0)
-                                    player.sendMessage("You do not have a house called " + param, House.plugin.chatColor);
-                                else
-                                {
-                                    House.plugin.playerHouses[playerHouseIndex].Houses.RemoveAt(coordsIndex);
-                                    player.sendMessage("You've deleted the house called " + param, House.plugin.chatColor);
-                                }   
-                            }
-                            else
-                                player.sendMessage("You must supply the name of the house you want to delete", House.plugin.chatColor);
-                        }
+                            player.sendMessage("You must supply a house name to delete", House.plugin.chatColor);
                         break;
 
                     // DISALLOW
@@ -335,6 +415,78 @@ namespace House.Commands
                         }
                         else
                             player.sendMessage("Players aren't allowed to make houses", House.plugin.chatColor);
+                        break;
+
+                    // OPDELETE
+                    case "OD":
+                    case "OPDELETE":
+                        if (player.Op)
+                        {
+                            if (args.TryGetString(1, out param))
+                            {
+                                if (args.TryGetString(2, out param2))
+                                    DeleteHouse(param, param2, player);
+                                else
+                                    player.sendMessage("You must supply a house name to delete", House.plugin.chatColor);
+                            }
+                            else
+                                player.sendMessage("You must supply a player name", House.plugin.chatColor);
+                        }
+                        break;
+
+                    // OPLIST
+                    case "OI":
+                    case "OPLIST":
+                        if (player.Op)
+                        {
+                            if (args.TryGetString(1, out param))
+                            {
+                                playerHouseIndex = House.plugin.GetPlayerHouseIndex(param);
+                                if (playerHouseIndex < 0)
+                                    player.sendMessage("No houses for player " + param, House.plugin.chatColor);
+                                else
+                                {
+                                    foreach (PlayerHouseCoords playerHouseCoord in House.plugin.playerHouses[playerHouseIndex].Houses)
+                                    {
+                                        player.sendMessage(playerHouseCoord.HouseName + " at " +
+                                            "(" + playerHouseCoord.TopLeft.X + "," + playerHouseCoord.TopLeft.Y + ")" +
+                                            "(" + playerHouseCoord.BottomRight.X + "," + playerHouseCoord.BottomRight.Y + ")", House.plugin.chatColor);
+                                    }
+                                }
+                            }
+                            else
+                                player.sendMessage("You must supply a player name", House.plugin.chatColor);
+                        }
+                        break;
+
+                    // OPTELEPORT
+                    case "OT":
+                    case "OPTELEPORT":
+                        if (player.Op)
+                        {
+                            if (args.TryGetString(1, out param))
+                            {
+                                if (args.TryGetString(2, out param2))
+                                    TeleportToHouse(param, param2, player);
+                                else
+                                    player.sendMessage("You must supply a house to teleport to", House.plugin.chatColor);
+                            }
+                            else
+                                player.sendMessage("You must supply a player name", House.plugin.chatColor);
+                        }
+                        break;
+
+                    // OPWHICH
+                    case "OW":
+                    case "OWHICH":
+                        if (player.Op)
+                        {
+                            houseName = House.plugin.GetHouseNameImInside(player);
+                            if (houseName == null)
+                                player.sendMessage("You're not inside any of your houses", House.plugin.chatColor);
+                            else
+                                player.sendMessage("You're inside the house called " + houseName, House.plugin.chatColor);
+                        }
                         break;
 
                     // SET
@@ -506,32 +658,16 @@ namespace House.Commands
                     // TELEPORT
                     case "T":
                     case "TELEPORT":
-                        if (House.plugin.properties.PlayersCanTeleport || player.Op)
-                        {
-                            if (args.TryGetString(1, out param))
-                            {
-                                houseIndex = House.plugin.GetHouseCoordsIndexByName(player.Name, param);
-                                if (houseIndex < 0)
-                                    player.sendMessage("You don't have a house called " + param, House.plugin.chatColor);
-                                else
-                                {
-                                    player.sendMessage("Teleporting to " + param, House.plugin.chatColor);
-                                    pHC = House.plugin.playerHouses[House.plugin.GetPlayerHouseIndex(player.Name)].Houses[houseIndex];
-                                    player.teleportTo(((pHC.TopLeft.X * 16) + (pHC.BottomRight.X * 16)) / 2, 
-                                                      ((pHC.TopLeft.Y * 16) + (pHC.BottomRight.Y * 16)) / 2);                                    
-                                }
-                            }
-                            else
-                                player.sendMessage("You must supply a house name to teleport to", House.plugin.chatColor);
-                        }
+                        if (args.TryGetString(1, out param))
+                            TeleportToHouse(player.Name, param, player);
                         else
-                            player.sendMessage("Only OPs can teleport to houses", House.plugin.chatColor);
+                            player.sendMessage("You must supply a house name to teleport to", House.plugin.chatColor);
                         break;
 
                     // WHICH
                     case "W":
                     case "WHICH":
-                        string houseName = House.plugin.GetHouseNameImInside(player.Name);
+                        houseName = House.plugin.GetMyHouseNameImInside(player.Name);
                         if (houseName == null)
                             player.sendMessage("You're not inside any of your houses", House.plugin.chatColor);
                         else

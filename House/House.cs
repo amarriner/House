@@ -83,7 +83,7 @@ namespace House
             Name = "House";
             Description = "A plugin to allow players to define a safe area";
             Author = "amarriner";
-            Version = "0.3.1";
+            Version = "0.3.2";
             TDSMBuild = 31;
 
             plugin = this;
@@ -188,7 +188,7 @@ namespace House
                 String cornerDesc = starthouse ? "top-left" : "bottom-right";
                 Event.Cancelled = true;
 
-                if (!IsInsideAnotherHouse(player.Name, (int)Event.Position.X, (int)Event.Position.Y))
+                if (GetHouseNameImInside(player) != null)
                 {
                     UpdateCoordsForPlayer(player.Name, (int)Event.Position.X, (int)Event.Position.Y, houseIndex);
                     player.sendMessage("You've set the " + cornerDesc + " corner of house " + houseName, chatColor);
@@ -197,7 +197,7 @@ namespace House
                 }
                 else
                 {
-                    player.sendMessage("You're inside another player's house, you cannot set your " + cornerDesc + " here");
+                    player.sendMessage("You're inside another house, you cannot set your " + cornerDesc + " here");
                 }
             } 
 
@@ -218,19 +218,34 @@ namespace House
             base.onPlayerTileChange(Event);
         }
 
-        public string GetHouseNameImInside(string PlayerName)
+        public string GetMyHouseNameImInside(string PlayerName)
         {
-            Player player = Server.GetPlayerByName(PlayerName);
-            int playerHouseIndex = GetPlayerHouseIndex(PlayerName);
+                Player player = Server.GetPlayerByName(PlayerName);
+                int playerHouseIndex = GetPlayerHouseIndex(PlayerName);
 
-            if (playerHouseIndex < 0)
-                return null;
+                if (playerHouseIndex < 0)
+                    return null;
 
-            foreach (PlayerHouseCoords playerHouseCoord in playerHouses[playerHouseIndex].Houses)
+                foreach (PlayerHouseCoords playerHouseCoord in playerHouses[playerHouseIndex].Houses)
+                {
+                    if (player.Position.X / 16 >= playerHouseCoord.TopLeft.X && player.Position.X / 16 <= playerHouseCoord.BottomRight.X &&
+                        player.Position.Y / 16 >= playerHouseCoord.TopLeft.Y && player.Position.Y / 16 <= playerHouseCoord.BottomRight.Y)
+                        return playerHouseCoord.HouseName;
+                }
+
+            return null;
+        }
+
+        public string GetHouseNameImInside(Player player)
+        {
+            foreach (PlayerHouses playerHouse in playerHouses)
             {
-                if (player.Position.X / 16 >= playerHouseCoord.TopLeft.X && player.Position.X / 16 <= playerHouseCoord.BottomRight.X &&
-                    player.Position.Y / 16 >= playerHouseCoord.TopLeft.Y && player.Position.Y / 16 <= playerHouseCoord.BottomRight.Y)
-                    return playerHouseCoord.HouseName;
+                foreach (PlayerHouseCoords playerHouseCoord in playerHouse.Houses)
+                {
+                    if (player.Position.X / 16 >= playerHouseCoord.TopLeft.X && player.Position.X / 16 <= playerHouseCoord.BottomRight.X &&
+                        player.Position.Y / 16 >= playerHouseCoord.TopLeft.Y && player.Position.Y / 16 <= playerHouseCoord.BottomRight.Y)
+                        return playerHouse.PlayerName + "'s house " + playerHouseCoord.HouseName;
+                }
             }
 
             return null;
@@ -275,7 +290,7 @@ namespace House
 
         public override void onTimeChange(TimeChangedEvent Event)
         {
-            if (Math.Abs(Event.GetTime - lastTime) > 90000)
+            if (Math.Abs(Event.GetTime - lastTime) > 10000)
             {
                 Program.tConsole.WriteLine("Saving house.xml");
                 SaveHouseData();
