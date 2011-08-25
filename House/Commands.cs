@@ -273,7 +273,7 @@ namespace House.Commands
                     case "TL":
                     case "TOPLEFT":
                     case "START":
-                        if (House.plugin.playersCanMakeHouses || player.isInOpList())
+                        if (House.plugin.playersCanMakeHouses || player.Op)
                         {
                             player.PluginData["starthouse"] = true;
                             if (args.TryGetString(1, out param))
@@ -307,7 +307,7 @@ namespace House.Commands
                     case "BR":
                     case "BOTTOMRIGHT":
                     case "END":
-                        if (House.plugin.playersCanMakeHouses || player.isInOpList())
+                        if (House.plugin.playersCanMakeHouses || player.Op)
                         {
                             player.PluginData["endhouse"] = true;
                             if (args.TryGetString(1, out param))
@@ -340,7 +340,7 @@ namespace House.Commands
                     // SET
                     case "S":
                     case "SET":
-                        if (!player.isInOpList())
+                        if (!player.Op)
                             player.sendMessage("Only ops can use this command!", House.plugin.chatColor);
                         else
                         {
@@ -506,7 +506,7 @@ namespace House.Commands
                     // TELEPORT
                     case "T":
                     case "TELEPORT":
-                        if (House.plugin.properties.PlayersCanTeleport || player.isInOpList())
+                        if (House.plugin.properties.PlayersCanTeleport || player.Op)
                         {
                             if (args.TryGetString(1, out param))
                             {

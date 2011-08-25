@@ -83,7 +83,7 @@ namespace House
             Name = "House";
             Description = "A plugin to allow players to define a safe area";
             Author = "amarriner";
-            Version = "0.3";
+            Version = "0.3.1";
             TDSMBuild = 31;
 
             plugin = this;
@@ -153,7 +153,7 @@ namespace House
         {
             Player player = Server.GetPlayerByName(Event.Sender.Name);
             if (IsInsideAnotherHouse(player.Name, (int)Event.Sign.x, (int)Event.Sign.y, CHECK_SIGN_LOCK) &&
-                !player.isInOpList())
+                !player.Op)
             {
                 Event.Cancelled = true;
                 player.sendMessage("You cannot edit this sign, it's locked and inside someone else's house", chatColor);
@@ -165,7 +165,7 @@ namespace House
         {
             Player player = Server.GetPlayerByName(Event.Sender.Name);
             if (IsInsideAnotherHouse(player.Name, (int)Server.chest[Event.ID].x, (int)Server.chest[Event.ID].y, CHECK_CHEST_LOCK) &&
-                !player.isInOpList())
+                !player.Op)
             {
                 Event.Cancelled = true;
                 player.sendMessage("You cannot open this chest, it's locked and inside someone else's house", chatColor);
@@ -202,7 +202,7 @@ namespace House
             } 
 
             else if (IsInsideAnotherHouse(player.Name, (int)Event.Position.X, (int)Event.Position.Y) && ! starthouse && ! endhouse &&
-                !player.isInOpList())
+                !player.Op)
             {
                 Event.Cancelled = true;
                 player.sendMessage("You're trying to build inside someone's house--this is not allowed", chatColor);
