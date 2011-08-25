@@ -83,7 +83,7 @@ namespace House
             Name = "House";
             Description = "A plugin to allow players to define a safe area";
             Author = "amarriner";
-            Version = "0.3.2";
+            Version = "0.3.3";
             TDSMBuild = 31;
 
             plugin = this;
@@ -188,7 +188,7 @@ namespace House
                 String cornerDesc = starthouse ? "top-left" : "bottom-right";
                 Event.Cancelled = true;
 
-                if (GetHouseNameImInside(player) != null)
+                if (GetHouseNameImInside(player) == null)
                 {
                     UpdateCoordsForPlayer(player.Name, (int)Event.Position.X, (int)Event.Position.Y, houseIndex);
                     player.sendMessage("You've set the " + cornerDesc + " corner of house " + houseName, chatColor);
