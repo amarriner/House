@@ -26,12 +26,14 @@ namespace House
         public bool LockChests;
         public bool LockSigns;
         public bool LockDoors;
+        public Point TeleportPoint;
 
         public PlayerHouseCoords(string HouseName = null)
         {
             this.HouseName = HouseName;
             this.TopLeft = new Point();
             this.BottomRight = new Point();
+            this.TeleportPoint = new Point();
             this.Allowed = new List<string>();
             this.LockChests = true;
             this.LockDoors = true;
@@ -67,6 +69,8 @@ namespace House
         public bool playersCanTeleport;
         public bool playersCanMakeHouses;
 
+        public Hashtable tempHouses = new Hashtable();
+
         public String xmlFilename = "house.xml";
         public String xmlNamespace = "housePlugin";
 
@@ -81,7 +85,7 @@ namespace House
         public override void Load()
         {
             Name = "House";
-            Description = "A plugin to allow players to define a safe area";
+            Description = "A plugin to allow players to define safe areas";
             Author = "amarriner";
             Version = "0.3.4";
             TDSMBuild = 31;
@@ -179,6 +183,7 @@ namespace House
             bool starthouse = player.PluginData.ContainsKey("starthouse") ? (bool)player.PluginData["starthouse"] : false;
             bool endhouse = player.PluginData.ContainsKey("endhouse") ? (bool)player.PluginData["endhouse"] : false;
             bool check = player.PluginData.ContainsKey("check") ? (bool)player.PluginData["check"] : false;
+            bool teleportSet = player.PluginData.ContainsKey("teleportset") ? (bool)player.PluginData["teleportset"] : false;
             int houseIndex = player.PluginData.ContainsKey("houseIndex") ? (int)player.PluginData["houseIndex"] : -1;
             string houseName = player.PluginData.ContainsKey("houseName") ? (string)player.PluginData["houseName"] : null;
 
@@ -215,6 +220,24 @@ namespace House
                 player.sendMessage("The block you just clicked on is at " + (int)Event.Position.X + "," + (int)Event.Position.Y, chatColor);
             }
 
+            else if (teleportSet)
+            {
+                if (GetMyHouseNamePositionInside(player.Name, (int)Event.Position.X, (int)Event.Position.Y) == (string)player.PluginData["teleporthouse"])
+                {
+                    int playerIndex = GetPlayerHouseIndex(player.Name);
+                    houseIndex = GetHouseCoordsIndexByName(player.Name, (string)player.PluginData["teleporthouse"]);
+                    PlayerHouseCoords tempCoords = playerHouses[playerIndex].Houses[houseIndex];
+                    tempCoords.TeleportPoint.X = (int)Event.Position.X;
+                    tempCoords.TeleportPoint.Y = (int)Event.Position.Y;
+                    playerHouses[playerIndex].Houses[houseIndex] = tempCoords;
+                    player.sendMessage("Teleport point set for house " + (string)player.PluginData["teleporthouse"], chatColor);
+                }
+                else
+                    player.sendMessage("That block is not inside your house called " + (string)player.PluginData["teleporthouse"], chatColor);
+
+                player.PluginData["teleportset"] = false;
+            }
+
             base.onPlayerTileChange(Event);
         }
 
@@ -232,6 +255,24 @@ namespace House
                         player.Position.Y / 16 >= playerHouseCoord.TopLeft.Y && player.Position.Y / 16 <= playerHouseCoord.BottomRight.Y)
                         return playerHouseCoord.HouseName;
                 }
+
+            return null;
+        }
+
+        public string GetMyHouseNamePositionInside(string PlayerName, int x, int y)
+        {
+            Player player = Server.GetPlayerByName(PlayerName);
+            int playerHouseIndex = GetPlayerHouseIndex(PlayerName);
+
+            if (playerHouseIndex < 0)
+                return null;
+
+            foreach (PlayerHouseCoords playerHouseCoord in playerHouses[playerHouseIndex].Houses)
+            {
+                if (x >= playerHouseCoord.TopLeft.X && x <= playerHouseCoord.BottomRight.X &&
+                    y >= playerHouseCoord.TopLeft.Y && y <= playerHouseCoord.BottomRight.Y)
+                    return playerHouseCoord.HouseName;
+            }
 
             return null;
         }
@@ -367,28 +408,61 @@ namespace House
 
             if (playerHouses[playerIndex].Houses.Count == houseIndex)
             {
-                tempCoords = new PlayerHouseCoords((string)player.PluginData["houseName"]);
-                playerHouses[playerIndex].Houses.Add(tempCoords);
+                if (!tempHouses.ContainsKey(player.Name))
+                {
+                    tempHouses[player.Name] = new PlayerHouseCoords((string)player.PluginData["houseName"]);
+                }
+
+                tempCoords = (PlayerHouseCoords)tempHouses[player.Name];
+
+                if (tempCoords.HouseName != (string)player.PluginData["houseName"])
+                {
+                    tempHouses[player.Name] = new PlayerHouseCoords((string)player.PluginData["houseName"]);
+                    tempCoords = (PlayerHouseCoords)tempHouses[player.Name];
+                }
+
+                if (starthouse)
+                {
+                    tempCoords.TopLeft.X = x;
+                    tempCoords.TopLeft.Y = y;
+                }
+                else if (endhouse)
+                {
+                    tempCoords.BottomRight.X = x;
+                    tempCoords.BottomRight.Y = y;
+                }
+
+                if (tempCoords.TopLeft.X != 0 && tempCoords.TopLeft.Y != 0 &&
+                    tempCoords.BottomRight.X != 0 && tempCoords.BottomRight.Y != 0)
+                {
+                    playerHouses[playerIndex].Houses.Add(tempCoords);
+                    tempHouses.Remove(player.Name);
+                    validateHouse(PlayerName, houseIndex);
+                }
+
+                else
+                {
+                    tempHouses[player.Name] = tempCoords;
+                }
             }
             else
             {
                 tempCoords = playerHouses[playerIndex].Houses[houseIndex];
-            }
+                if (starthouse)
+                {
+                    tempCoords.TopLeft.X = x;
+                    tempCoords.TopLeft.Y = y;
+                    playerHouses[playerIndex].Houses[houseIndex] = tempCoords;
+                }
+                else if (endhouse)
+                {
+                    tempCoords.BottomRight.X = x;
+                    tempCoords.BottomRight.Y = y;
+                    playerHouses[playerIndex].Houses[houseIndex] = tempCoords;
+                }
 
-            if (starthouse)
-            {
-                tempCoords.TopLeft.X = x;
-                tempCoords.TopLeft.Y = y;
-                playerHouses[playerIndex].Houses[houseIndex] = tempCoords;
+                validateHouse(PlayerName, houseIndex);
             }
-            else if (endhouse)
-            {
-                tempCoords.BottomRight.X = x;
-                tempCoords.BottomRight.Y = y;
-                playerHouses[playerIndex].Houses[houseIndex] = tempCoords;
-            }
-
-            validateHouse(PlayerName, houseIndex);
         }
 
         public void validateHouse(string PlayerName, int houseIndex)
@@ -531,6 +605,11 @@ namespace House
                                         case "LOCKSIGNS":
                                             playerHouseCoords.LockSigns = Boolean.Parse(houseNode.ChildNodes[i].InnerXml);
                                             break;
+
+                                        case "TELEPORTPOINT":
+                                            playerHouseCoords.TeleportPoint.X = Int32.Parse(houseNode.ChildNodes[i]["x"].InnerXml);
+                                            playerHouseCoords.TeleportPoint.Y = Int32.Parse(houseNode.ChildNodes[i]["y"].InnerXml);
+                                            break;
                                     }
                                 }
 
@@ -599,6 +678,16 @@ namespace House
                     locks = houseXML.CreateNode(XmlNodeType.Element, "locksigns", xmlNamespace);
                     locks.InnerXml = coords.LockSigns.ToString();
                     node.AppendChild(locks);
+
+                    XmlNode teleportPoint, nodeX, nodeY;
+                    teleportPoint = houseXML.CreateNode(XmlNodeType.Element, "teleportpoint", xmlNamespace);
+                    nodeX = houseXML.CreateNode(XmlNodeType.Element, "x", xmlNamespace);
+                    nodeX.InnerXml = coords.TeleportPoint.X.ToString();
+                    nodeY = houseXML.CreateNode(XmlNodeType.Element, "y", xmlNamespace);
+                    nodeY.InnerXml = coords.TeleportPoint.Y.ToString();
+                    teleportPoint.AppendChild(nodeX);
+                    teleportPoint.AppendChild(nodeY);
+                    node.AppendChild(teleportPoint);
 
                     XmlNode allow, allowed;
                     allow = houseXML.CreateNode(XmlNodeType.Element, "allow", xmlNamespace);

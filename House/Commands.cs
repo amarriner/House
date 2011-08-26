@@ -77,8 +77,11 @@ namespace House.Commands
                     {
                         Teleporter.sendMessage("Teleporting to " + HouseName, House.plugin.chatColor);
                         PlayerHouseCoords pHC = House.plugin.playerHouses[House.plugin.GetPlayerHouseIndex(PlayerName)].Houses[houseIndex];
-                        Teleporter.teleportTo(((pHC.TopLeft.X * 16) + (pHC.BottomRight.X * 16)) / 2,
-                                          ((pHC.TopLeft.Y * 16) + (pHC.BottomRight.Y * 16)) / 2);
+                        if (pHC.TeleportPoint.X > 0 && pHC.TeleportPoint.Y > 0)
+                            Teleporter.teleportTo(pHC.TeleportPoint.X * 16, pHC.TeleportPoint.Y * 16);
+                        else
+                            Teleporter.teleportTo(((pHC.TopLeft.X * 16) + (pHC.BottomRight.X * 16)) / 2,
+                                                  ((pHC.TopLeft.Y * 16) + (pHC.BottomRight.Y * 16)) / 2);
                     }
                 }
                 else
@@ -159,6 +162,12 @@ namespace House.Commands
                                         player.sendMessage("Must be OP to run this", House.plugin.chatColor);
                                     player.sendMessage("Abbreviations: t", House.plugin.chatColor);
                                     break;
+                                case "TS":
+                                case "TELEPORTSET":
+                                    player.sendMessage("/teleportset <housename>", House.plugin.chatColor);
+                                    player.sendMessage("Set the teleport point in your house called <housename>", House.plugin.chatColor);
+                                    player.sendMessage("Abbreviations: ts", House.plugin.chatColor);
+                                    break;
                                 case "TL":
                                 case "TOPLEFT":
                                 case "START":
@@ -237,7 +246,9 @@ namespace House.Commands
                         else
                         {
                             player.sendMessage("VALID HOUSE COMMANDS:", House.plugin.chatColor);
-                            player.sendMessage("/house allow, check, delete, disallow, end, list, lock, properties, set, start, unlock, which", House.plugin.chatColor);
+                            player.sendMessage("/house allow, check, delete, disallow, end, list, lock,", House.plugin.chatColor);
+                            player.sendMessage("opdelete, oplist, opteleport, opwhich, properties, set,", House.plugin.chatColor);
+                            player.sendMessage("start, teleport, teleportstart, unlock, which", House.plugin.chatColor);
                             player.sendMessage("Run /house ? <command> for more details on a particular command", House.plugin.chatColor);
                         }
                         break;
@@ -282,21 +293,44 @@ namespace House.Commands
                         }
                         break;
 
+                    // BOTTOM RIGHT
+                    case "BR":
+                    case "BOTTOMRIGHT":
+                    case "END":
+                        if (House.plugin.playersCanMakeHouses || player.Op)
+                        {
+                            player.PluginData["endhouse"] = true;
+                            if (args.TryGetString(1, out param))
+                            {
+                                houseIndex = House.plugin.GetHouseCoordsIndexByName(player.Name, param);
+                                if (houseIndex >= 0)
+                                    player.PluginData["houseIndex"] = houseIndex;
+                                else
+                                {
+                                    int totalHouses = House.plugin.GetTotalPlayerHouses(player.Name);
+                                    if (totalHouses >= House.plugin.maxHouses)
+                                        player.sendMessage("You cannot create another house, you have reached the max house limit", House.plugin.chatColor);
+                                    else
+                                    {
+                                        player.sendMessage("Break the block where you want the bottom right corner of your house to be", House.plugin.chatColor);
+                                        player.PluginData["houseIndex"] = totalHouses >= 0 ? totalHouses : 0;
+                                        player.PluginData["houseName"] = param;
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                player.sendMessage("You must specify a name for your house", House.plugin.chatColor);
+                            }
+                        }
+                        else
+                            player.sendMessage("Players aren't allowed to make houses", House.plugin.chatColor);
+                        break;
+
                     // CHECK
                     case "C":
                     case "CHECK":
                         player.PluginData["check"] = true;
-                        break;
-
-                    // PROPERTIES
-                    case "P":
-                    case "PROPERTIES":
-                        player.sendMessage("Max Area: " + House.plugin.maxArea, House.plugin.chatColor);
-                        player.sendMessage("Max Houses: " + House.plugin.maxHouses, House.plugin.chatColor);
-                        player.sendMessage("Min Height: " + House.plugin.minHeight, House.plugin.chatColor);
-                        player.sendMessage("Max Height: " + House.plugin.maxHeight, House.plugin.chatColor);
-                        player.sendMessage("Players Can Make Houses: " + House.plugin.playersCanMakeHouses.ToString(), House.plugin.chatColor);
-                        player.sendMessage("Players Can Teleport: " + House.plugin.playersCanTeleport.ToString(), House.plugin.chatColor);
                         break;
 
                     // DELETE
@@ -349,72 +383,74 @@ namespace House.Commands
                         }
                         break;
 
-                    // TOP LEFT
-                    case "TL":
-                    case "TOPLEFT":
-                    case "START":
-                        if (House.plugin.playersCanMakeHouses || player.Op)
+                    // LIST
+                    case "I":
+                    case "LIST":
+                        playerHouseIndex = House.plugin.GetPlayerHouseIndex(player.Name);
+                        if (playerHouseIndex < 0)
+                            player.sendMessage("You don't have any houses yet", House.plugin.chatColor);
+                        else
                         {
-                            player.PluginData["starthouse"] = true;
-                            if (args.TryGetString(1, out param))
+                            foreach (PlayerHouseCoords playerHouseCoord in House.plugin.playerHouses[playerHouseIndex].Houses)
                             {
-                                houseIndex = House.plugin.GetHouseCoordsIndexByName(player.Name, param);
-                                if (houseIndex >= 0)
-                                    player.PluginData["houseIndex"] = houseIndex;
-                                else
-                                {
-                                    int totalHouses = House.plugin.GetTotalPlayerHouses(player.Name);
-                                    if (totalHouses >= House.plugin.maxHouses)
-                                        player.sendMessage("You cannot create another house, you have reached the max house limit", House.plugin.chatColor);
-                                    else
-                                    {
-                                        player.sendMessage("Break the block where you want the top left corner of your house to be", House.plugin.chatColor);
-                                        player.PluginData["houseIndex"] = totalHouses >= 0 ? totalHouses : 0;
-                                        player.PluginData["houseName"] = param;
-                                    }
-                                }
-                            }
-                            else
-                            {
-                                player.sendMessage("You must specify a name for your house", House.plugin.chatColor);
+                                player.sendMessage(playerHouseCoord.HouseName, House.plugin.chatColor);
                             }
                         }
-                        else
-                            player.sendMessage("Players aren't allowed to make houses", House.plugin.chatColor);
                         break;
 
-                    // BOTTOM RIGHT
-                    case "BR":
-                    case "BOTTOMRIGHT":
-                    case "END":
-                        if (House.plugin.playersCanMakeHouses || player.Op)
+                    // LOCK
+                    case "L":
+                    case "LOCK":
+                        playerHouse = House.plugin.playerHouses[House.plugin.GetPlayerHouseIndex(player.Name)];
+                        if (args.TryGetString(1, out param))
                         {
-                            player.PluginData["endhouse"] = true;
-                            if (args.TryGetString(1, out param))
+                            houseIndex = House.plugin.GetHouseCoordsIndexByName(player.Name, param);
+                            if (houseIndex >= 0)
                             {
-                                houseIndex = House.plugin.GetHouseCoordsIndexByName(player.Name, param);
-                                if (houseIndex >= 0)
-                                    player.PluginData["houseIndex"] = houseIndex;
-                                else
+                                if (args.TryGetString(2, out param2))
                                 {
-                                    int totalHouses = House.plugin.GetTotalPlayerHouses(player.Name);
-                                    if (totalHouses >= House.plugin.maxHouses)
-                                        player.sendMessage("You cannot create another house, you have reached the max house limit", House.plugin.chatColor);
-                                    else
+                                    PlayerHouseCoords pHC = playerHouse.Houses[houseIndex];
+                                    switch (param2.ToUpper())
                                     {
-                                        player.sendMessage("Break the block where you want the bottom right corner of your house to be", House.plugin.chatColor);
-                                        player.PluginData["houseIndex"] = totalHouses >= 0 ? totalHouses : 0;
-                                        player.PluginData["houseName"] = param;
+                                        case "C":
+                                        case "CHEST":
+                                        case "CHESTS":
+                                            pHC.LockChests = true;
+                                            playerHouse.Houses[houseIndex] = pHC;
+                                            House.plugin.playerHouses[House.plugin.GetPlayerHouseIndex(player.Name)] = playerHouse;
+                                            player.sendMessage("You locked all chests in your house " + param, House.plugin.chatColor);
+                                            break;
+                                        case "D":
+                                        case "DOOR":
+                                        case "DOORS":
+                                            pHC.LockDoors = true;
+                                            playerHouse.Houses[houseIndex] = pHC;
+                                            House.plugin.playerHouses[House.plugin.GetPlayerHouseIndex(player.Name)] = playerHouse;
+                                            player.sendMessage("You locked all doors in your house " + param, House.plugin.chatColor);
+                                            break;
+                                        case "S":
+                                        case "SIGN":
+                                        case "SIGNS":
+                                            pHC.LockSigns = true;
+                                            playerHouse.Houses[houseIndex] = pHC;
+                                            House.plugin.playerHouses[House.plugin.GetPlayerHouseIndex(player.Name)] = playerHouse;
+                                            player.sendMessage("You locked all signs in your house " + param, House.plugin.chatColor);
+                                            break;
+                                        default:
+                                            player.sendMessage("Invalid lock parameter!", House.plugin.chatColor);
+                                            break;
                                     }
                                 }
+                                else
+                                    player.sendMessage("You must supply a keyword (CHESTS, DOORS, SIGNS)", House.plugin.chatColor);
                             }
                             else
-                            {
-                                player.sendMessage("You must specify a name for your house", House.plugin.chatColor);
-                            }
+                                player.sendMessage("No such house", House.plugin.chatColor);
                         }
                         else
-                            player.sendMessage("Players aren't allowed to make houses", House.plugin.chatColor);
+                        {
+                            player.sendMessage("You must supply a house name", House.plugin.chatColor);
+                        }
                         break;
 
                     // OPDELETE
@@ -487,6 +523,17 @@ namespace House.Commands
                             else
                                 player.sendMessage("You're inside the house called " + houseName, House.plugin.chatColor);
                         }
+                        break;
+
+                    // PROPERTIES
+                    case "P":
+                    case "PROPERTIES":
+                        player.sendMessage("Max Area: " + House.plugin.maxArea, House.plugin.chatColor);
+                        player.sendMessage("Max Houses: " + House.plugin.maxHouses, House.plugin.chatColor);
+                        player.sendMessage("Min Height: " + House.plugin.minHeight, House.plugin.chatColor);
+                        player.sendMessage("Max Height: " + House.plugin.maxHeight, House.plugin.chatColor);
+                        player.sendMessage("Players Can Make Houses: " + House.plugin.playersCanMakeHouses.ToString(), House.plugin.chatColor);
+                        player.sendMessage("Players Can Teleport: " + House.plugin.playersCanTeleport.ToString(), House.plugin.chatColor);
                         break;
 
                     // SET
@@ -600,76 +647,6 @@ namespace House.Commands
                         }
                         break;
 
-                    // LIST
-                    case "I":
-                    case "LIST":
-                        playerHouseIndex = House.plugin.GetPlayerHouseIndex(player.Name);
-                        if (playerHouseIndex < 0)
-                            player.sendMessage("You don't have any houses yet", House.plugin.chatColor);
-                        else
-                        {
-                            foreach (PlayerHouseCoords playerHouseCoord in House.plugin.playerHouses[playerHouseIndex].Houses)
-                            {
-                                player.sendMessage(playerHouseCoord.HouseName, House.plugin.chatColor);
-                            }
-                        }
-                        break;
-
-                    // LOCK
-                    case "L":
-                    case "LOCK":
-                        playerHouse = House.plugin.playerHouses[House.plugin.GetPlayerHouseIndex(player.Name)];
-                        if (args.TryGetString(1, out param))
-                        {
-                            houseIndex = House.plugin.GetHouseCoordsIndexByName(player.Name, param);
-                            if (houseIndex >= 0)
-                            {
-                                if (args.TryGetString(2, out param2))
-                                {
-                                    PlayerHouseCoords pHC = playerHouse.Houses[houseIndex];
-                                    switch (param2.ToUpper())
-                                    {
-                                        case "C":
-                                        case "CHEST":
-                                        case "CHESTS":
-                                            pHC.LockChests = true;
-                                            playerHouse.Houses[houseIndex] = pHC;
-                                            House.plugin.playerHouses[House.plugin.GetPlayerHouseIndex(player.Name)] = playerHouse;
-                                            player.sendMessage("You locked all chests in your house " + param, House.plugin.chatColor);
-                                            break;
-                                        case "D":
-                                        case "DOOR":
-                                        case "DOORS":
-                                            pHC.LockDoors = true;
-                                            playerHouse.Houses[houseIndex] = pHC;
-                                            House.plugin.playerHouses[House.plugin.GetPlayerHouseIndex(player.Name)] = playerHouse;
-                                            player.sendMessage("You locked all doors in your house " + param, House.plugin.chatColor);
-                                            break;
-                                        case "S":
-                                        case "SIGN":
-                                        case "SIGNS":
-                                            pHC.LockSigns = true;
-                                            playerHouse.Houses[houseIndex] = pHC;
-                                            House.plugin.playerHouses[House.plugin.GetPlayerHouseIndex(player.Name)] = playerHouse;
-                                            player.sendMessage("You locked all signs in your house " + param, House.plugin.chatColor);
-                                            break;
-                                        default:
-                                            player.sendMessage("Invalid lock parameter!", House.plugin.chatColor);
-                                            break;
-                                    }
-                                }
-                                else
-                                    player.sendMessage("You must supply a keyword (CHESTS, DOORS, SIGNS)", House.plugin.chatColor);
-                            }
-                            else
-                                player.sendMessage("No such house", House.plugin.chatColor);
-                        }
-                        else
-                        {
-                            player.sendMessage("You must supply a house name", House.plugin.chatColor);
-                        }
-                        break;
-
                     // TELEPORT
                     case "T":
                     case "TELEPORT":
@@ -679,14 +656,57 @@ namespace House.Commands
                             player.sendMessage("You must supply a house name to teleport to", House.plugin.chatColor);
                         break;
 
-                    // WHICH
-                    case "W":
-                    case "WHICH":
-                        houseName = House.plugin.GetMyHouseNameImInside(player.Name);
-                        if (houseName == null)
-                            player.sendMessage("You're not inside any of your houses", House.plugin.chatColor);
+                    // TELEPORTSET
+                    case "TS":
+                    case "TELEPORTSET":
+                        if (args.TryGetString(1, out param))
+                        {
+                            houseIndex = House.plugin.GetHouseCoordsIndexByName(player.Name, param);
+                            if (houseIndex >= 0)
+                            {
+                                player.PluginData["teleportset"] = true;
+                                player.PluginData["teleporthouse"] = param;
+                                player.sendMessage("Break the block where you want to set this house's teleport", House.plugin.chatColor);
+                            }
+                            else
+                                player.sendMessage("You don't have a house called " + param, House.plugin.chatColor);
+                        }
                         else
-                            player.sendMessage("You're inside the house called " + houseName, House.plugin.chatColor);
+                            player.sendMessage("You must supply a house name", House.plugin.chatColor);
+                        break;
+
+                    // TOP LEFT
+                    case "TL":
+                    case "TOPLEFT":
+                    case "START":
+                        if (House.plugin.playersCanMakeHouses || player.Op)
+                        {
+                            player.PluginData["starthouse"] = true;
+                            if (args.TryGetString(1, out param))
+                            {
+                                houseIndex = House.plugin.GetHouseCoordsIndexByName(player.Name, param);
+                                if (houseIndex >= 0)
+                                    player.PluginData["houseIndex"] = houseIndex;
+                                else
+                                {
+                                    int totalHouses = House.plugin.GetTotalPlayerHouses(player.Name);
+                                    if (totalHouses >= House.plugin.maxHouses)
+                                        player.sendMessage("You cannot create another house, you have reached the max house limit", House.plugin.chatColor);
+                                    else
+                                    {
+                                        player.sendMessage("Break the block where you want the top left corner of your house to be", House.plugin.chatColor);
+                                        player.PluginData["houseIndex"] = totalHouses >= 0 ? totalHouses : 0;
+                                        player.PluginData["houseName"] = param;
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                player.sendMessage("You must specify a name for your house", House.plugin.chatColor);
+                            }
+                        }
+                        else
+                            player.sendMessage("Players aren't allowed to make houses", House.plugin.chatColor);
                         break;
 
                     // UNLOCK
@@ -745,6 +765,16 @@ namespace House.Commands
                         break;
                     default:
                         player.sendMessage("Invalid house command", House.plugin.chatColor);
+                        break;
+
+                    // WHICH
+                    case "W":
+                    case "WHICH":
+                        houseName = House.plugin.GetMyHouseNameImInside(player.Name);
+                        if (houseName == null)
+                            player.sendMessage("You're not inside any of your houses", House.plugin.chatColor);
+                        else
+                            player.sendMessage("You're inside the house called " + houseName, House.plugin.chatColor);
                         break;
                 }
             }
