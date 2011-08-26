@@ -478,7 +478,7 @@ namespace House.Commands
 
                     // OPWHICH
                     case "OW":
-                    case "OWHICH":
+                    case "OPWHICH":
                         if (player.Op)
                         {
                             houseName = House.plugin.GetHouseNameImInside(player);
