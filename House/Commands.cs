@@ -621,37 +621,52 @@ namespace House.Commands
                         playerHouse = House.plugin.playerHouses[House.plugin.GetPlayerHouseIndex(player.Name)];
                         if (args.TryGetString(1, out param))
                         {
-                            switch (param.ToUpper())
+                            houseIndex = House.plugin.GetHouseCoordsIndexByName(player.Name, param);
+                            if (houseIndex >= 0)
                             {
-                                case "C":
-                                case "CHEST":
-                                case "CHESTS":
-                                    playerHouse.LockChests = true;
-                                    House.plugin.playerHouses[House.plugin.GetPlayerHouseIndex(player.Name)] = playerHouse;
-                                    player.sendMessage("You locked all chests in your house", House.plugin.chatColor);
-                                    break;
-                                case "D":
-                                case "DOOR":
-                                case "DOORS":
-                                    playerHouse.LockDoors = true;
-                                    House.plugin.playerHouses[House.plugin.GetPlayerHouseIndex(player.Name)] = playerHouse;
-                                    player.sendMessage("You locked all doors in your house", House.plugin.chatColor);
-                                    break;
-                                case "S":
-                                case "SIGN":
-                                case "SIGNS":
-                                    playerHouse.LockSigns = true;
-                                    House.plugin.playerHouses[House.plugin.GetPlayerHouseIndex(player.Name)] = playerHouse;
-                                    player.sendMessage("You locked all signs in your house", House.plugin.chatColor);
-                                    break;
-                                default:
-                                    player.sendMessage("Invalid lock parameter!", House.plugin.chatColor);
-                                    break;
+                                if (args.TryGetString(2, out param2))
+                                {
+                                    PlayerHouseCoords pHC = playerHouse.Houses[houseIndex];
+                                    switch (param2.ToUpper())
+                                    {
+                                        case "C":
+                                        case "CHEST":
+                                        case "CHESTS":
+                                            pHC.LockChests = true;
+                                            playerHouse.Houses[houseIndex] = pHC;
+                                            House.plugin.playerHouses[House.plugin.GetPlayerHouseIndex(player.Name)] = playerHouse;
+                                            player.sendMessage("You locked all chests in your house " + param, House.plugin.chatColor);
+                                            break;
+                                        case "D":
+                                        case "DOOR":
+                                        case "DOORS":
+                                            pHC.LockDoors = true;
+                                            playerHouse.Houses[houseIndex] = pHC;
+                                            House.plugin.playerHouses[House.plugin.GetPlayerHouseIndex(player.Name)] = playerHouse;
+                                            player.sendMessage("You locked all doors in your house " + param, House.plugin.chatColor);
+                                            break;
+                                        case "S":
+                                        case "SIGN":
+                                        case "SIGNS":
+                                            pHC.LockSigns = true;
+                                            playerHouse.Houses[houseIndex] = pHC;
+                                            House.plugin.playerHouses[House.plugin.GetPlayerHouseIndex(player.Name)] = playerHouse;
+                                            player.sendMessage("You locked all signs in your house " + param, House.plugin.chatColor);
+                                            break;
+                                        default:
+                                            player.sendMessage("Invalid lock parameter!", House.plugin.chatColor);
+                                            break;
+                                    }
+                                }
+                                else
+                                    player.sendMessage("You must supply a keyword (CHESTS, DOORS, SIGNS)", House.plugin.chatColor);
                             }
+                            else
+                                player.sendMessage("No such house", House.plugin.chatColor);
                         }
                         else
                         {
-                            player.sendMessage("Invalid lock parameter", House.plugin.chatColor);
+                            player.sendMessage("You must supply a house name", House.plugin.chatColor);
                         }
                         break;
 
@@ -680,36 +695,52 @@ namespace House.Commands
                         playerHouse = House.plugin.playerHouses[House.plugin.GetPlayerHouseIndex(player.Name)];
                         if (args.TryGetString(1, out param))
                         {
-                            switch (param.ToUpper())
+                            houseIndex = House.plugin.GetHouseCoordsIndexByName(player.Name, param);
+                            if (houseIndex >= 0)
                             {
-                                case "C":
-                                case "CHEST":
-                                case "CHESTS":
-                                    playerHouse.LockChests = false;
-                                    House.plugin.playerHouses[House.plugin.GetPlayerHouseIndex(player.Name)] = playerHouse;
-                                    player.sendMessage("You unlocked all chests in your house", House.plugin.chatColor);
-                                    break;
-                                case "D":
-                                case "DOOR":
-                                case "DOORS":
-                                    playerHouse.LockDoors = false;
-                                    House.plugin.playerHouses[House.plugin.GetPlayerHouseIndex(player.Name)] = playerHouse;
-                                    player.sendMessage("You unlocked all doors in your house", House.plugin.chatColor);                                    break;
-                                case "S":
-                                case "SIGN":
-                                case "SIGNS":
-                                    playerHouse.LockSigns = false;
-                                    House.plugin.playerHouses[House.plugin.GetPlayerHouseIndex(player.Name)] = playerHouse;
-                                    player.sendMessage("You unlocked all signs in your house", House.plugin.chatColor);
-                                    break;
-                                default:
-                                    player.sendMessage("Invalid lock parameter!", House.plugin.chatColor);
-                                    break;
+                                if (args.TryGetString(2, out param2))
+                                {
+                                    PlayerHouseCoords pHC = playerHouse.Houses[houseIndex];
+                                    switch (param2.ToUpper())
+                                    {
+                                        case "C":
+                                        case "CHEST":
+                                        case "CHESTS":
+                                            pHC.LockChests = false;
+                                            playerHouse.Houses[houseIndex] = pHC;
+                                            House.plugin.playerHouses[House.plugin.GetPlayerHouseIndex(player.Name)] = playerHouse;
+                                            player.sendMessage("You unlocked all chests in your house " + param, House.plugin.chatColor);
+                                            break;
+                                        case "D":
+                                        case "DOOR":
+                                        case "DOORS":
+                                            pHC.LockDoors = false;
+                                            playerHouse.Houses[houseIndex] = pHC;
+                                            House.plugin.playerHouses[House.plugin.GetPlayerHouseIndex(player.Name)] = playerHouse;
+                                            player.sendMessage("You unlocked all doors in your house " + param, House.plugin.chatColor);
+                                            break;
+                                        case "S":
+                                        case "SIGN":
+                                        case "SIGNS":
+                                            pHC.LockSigns = false;
+                                            playerHouse.Houses[houseIndex] = pHC;
+                                            House.plugin.playerHouses[House.plugin.GetPlayerHouseIndex(player.Name)] = playerHouse;
+                                            player.sendMessage("You unlocked all signs in your house " + param, House.plugin.chatColor);
+                                            break;
+                                        default:
+                                            player.sendMessage("Invalid unlock parameter!", House.plugin.chatColor);
+                                            break;
+                                    }
+                                }
+                                else
+                                    player.sendMessage("You must supply a keyword (CHESTS, DOORS, SIGNS)", House.plugin.chatColor);
                             }
+                            else
+                                player.sendMessage("No such house", House.plugin.chatColor);
                         }
                         else
                         {
-                            player.sendMessage("Invalid lock parameter", House.plugin.chatColor);
+                            player.sendMessage("You must supply a house name", House.plugin.chatColor);
                         }
                         break;
                     default:

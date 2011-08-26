@@ -23,6 +23,9 @@ namespace House
         public string HouseName;
         public Point TopLeft, BottomRight;
         public List<string> Allowed;
+        public bool LockChests;
+        public bool LockSigns;
+        public bool LockDoors;
 
         public PlayerHouseCoords(string HouseName = null)
         {
@@ -30,6 +33,9 @@ namespace House
             this.TopLeft = new Point();
             this.BottomRight = new Point();
             this.Allowed = new List<string>();
+            this.LockChests = true;
+            this.LockDoors = true;
+            this.LockSigns = true;
         }
     }
 
@@ -37,16 +43,10 @@ namespace House
     {
         public string PlayerName;
         public List<PlayerHouseCoords> Houses;
-        public bool LockChests;
-        public bool LockSigns;
-        public bool LockDoors;
 
         public PlayerHouses(string PlayerName)
         {
             this.PlayerName = PlayerName;
-            this.LockChests = false;
-            this.LockSigns = false;
-            this.LockDoors = false;
             this.Houses = new List<PlayerHouseCoords>();
         }
     }
@@ -83,7 +83,7 @@ namespace House
             Name = "House";
             Description = "A plugin to allow players to define a safe area";
             Author = "amarriner";
-            Version = "0.3.3";
+            Version = "0.3.4";
             TDSMBuild = 31;
 
             plugin = this;
@@ -270,13 +270,13 @@ namespace House
                                 }
                             }
 
-                            if (check == House.CHECK_CHEST_LOCK && !playerHouse.LockChests)
+                            if (check == House.CHECK_CHEST_LOCK && !houseCoords.LockChests)
                                 return false;
 
-                            if (check == House.CHECK_DOOR_LOCK && !playerHouse.LockDoors)
+                            if (check == House.CHECK_DOOR_LOCK && !houseCoords.LockDoors)
                                 return false;
 
-                            if (check == House.CHECK_SIGN_LOCK && !playerHouse.LockSigns)
+                            if (check == House.CHECK_SIGN_LOCK && !houseCoords.LockSigns)
                                 return false;
 
                             return true;
@@ -440,6 +440,7 @@ namespace House
             IEnumerator playerEnum, houseEnum, dataEnum;
             PlayerHouses playerHouse;
             PlayerHouseCoords playerHouseCoords;
+            bool lockChests = true, lockDoors = true, lockSigns = true;
 
             xmlFilename = pluginFolder + Path.DirectorySeparatorChar + xmlFilename;
             if (!File.Exists(xmlFilename))
@@ -474,6 +475,16 @@ namespace House
 
                     switch (dataNode.Name.ToUpper())
                     {
+                        case "LOCKCHESTS":
+                            lockChests = Boolean.Parse(dataNode.InnerXml);
+                            break;
+                        case "LOCKDOORS":
+                            lockDoors = Boolean.Parse(dataNode.InnerXml);
+                            break;
+                        case "LOCKSIGNS":
+                            lockSigns = Boolean.Parse(dataNode.InnerXml);
+                            break;
+
                         case "HOUSES":
                             // Loop through house data
                             int houseCount = 0;
@@ -496,15 +507,30 @@ namespace House
                                 playerHouseCoords.TopLeft.Y = Int32.Parse(houseNode["topleft"]["y"].InnerXml);
                                 playerHouseCoords.BottomRight.X = Int32.Parse(houseNode["bottomright"]["x"].InnerXml);
                                 playerHouseCoords.BottomRight.Y = Int32.Parse(houseNode["bottomright"]["y"].InnerXml);
+                                playerHouseCoords.LockChests = lockChests;
+                                playerHouseCoords.LockDoors = lockDoors;
+                                playerHouseCoords.LockSigns = lockSigns;
 
                                 for (int i = 0; i < houseNode.ChildNodes.Count; i++)
                                 {
-                                    if (houseNode.ChildNodes[i].Name.ToUpper() == "ALLOW")
+                                    switch (houseNode.ChildNodes[i].Name.ToUpper())
                                     {
-                                        for (int j = 0; j < houseNode.ChildNodes[i].ChildNodes.Count; j++)
-                                        {
-                                            playerHouseCoords.Allowed.Add(houseNode.ChildNodes[i].ChildNodes[j].InnerXml);
-                                        }
+                                        case "ALLOW":
+                                            for (int j = 0; j < houseNode.ChildNodes[i].ChildNodes.Count; j++)
+                                            {
+                                                playerHouseCoords.Allowed.Add(houseNode.ChildNodes[i].ChildNodes[j].InnerXml);
+                                            }
+                                            break;
+
+                                        case "LOCKCHESTS":
+                                            playerHouseCoords.LockChests = Boolean.Parse(houseNode.ChildNodes[i].InnerXml);
+                                            break;
+                                        case "LOCKDOORS":
+                                            playerHouseCoords.LockDoors = Boolean.Parse(houseNode.ChildNodes[i].InnerXml);
+                                            break;
+                                        case "LOCKSIGNS":
+                                            playerHouseCoords.LockSigns = Boolean.Parse(houseNode.ChildNodes[i].InnerXml);
+                                            break;
                                     }
                                 }
 
@@ -513,15 +539,6 @@ namespace House
                                 houseCount++;
                             }
 
-                            break;
-                        case "LOCKCHESTS":
-                            playerHouse.LockChests = Boolean.Parse(dataNode.InnerXml);
-                            break;
-                        case "LOCKDOORS":
-                            playerHouse.LockDoors = Boolean.Parse(dataNode.InnerXml);
-                            break;
-                        case "LOCKSIGNS":
-                            playerHouse.LockSigns = Boolean.Parse(dataNode.InnerXml);
                             break;
                     }
                 }
@@ -545,16 +562,6 @@ namespace House
                 playerAttribute.Value = playerHouse.PlayerName;
                 playerNode = houseXML.CreateNode(XmlNodeType.Element, "player", xmlNamespace);
                 playerNode.Attributes.Append(playerAttribute);
-
-                node = houseXML.CreateNode(XmlNodeType.Element, "lockchests", xmlNamespace);
-                node.InnerXml = playerHouse.LockChests.ToString();
-                playerNode.AppendChild(node);
-                node = houseXML.CreateNode(XmlNodeType.Element, "lockdoors", xmlNamespace);
-                node.InnerXml = playerHouse.LockDoors.ToString();
-                playerNode.AppendChild(node);
-                node = houseXML.CreateNode(XmlNodeType.Element, "locksigns", xmlNamespace);
-                node.InnerXml = playerHouse.LockSigns.ToString();
-                playerNode.AppendChild(node);
 
                 houses = houseXML.CreateNode(XmlNodeType.Element, "houses", xmlNamespace);
                 foreach (PlayerHouseCoords coords in playerHouse.Houses)
@@ -581,6 +588,17 @@ namespace House
                     coord.AppendChild(x);
                     coord.AppendChild(y);
                     node.AppendChild(coord);
+
+                    XmlNode locks;
+                    locks = houseXML.CreateNode(XmlNodeType.Element, "lockchests", xmlNamespace);
+                    locks.InnerXml = coords.LockChests.ToString();
+                    node.AppendChild(locks);
+                    locks = houseXML.CreateNode(XmlNodeType.Element, "lockdoors", xmlNamespace);
+                    locks.InnerXml = coords.LockDoors.ToString();
+                    node.AppendChild(locks);
+                    locks = houseXML.CreateNode(XmlNodeType.Element, "locksigns", xmlNamespace);
+                    locks.InnerXml = coords.LockSigns.ToString();
+                    node.AppendChild(locks);
 
                     XmlNode allow, allowed;
                     allow = houseXML.CreateNode(XmlNodeType.Element, "allow", xmlNamespace);
