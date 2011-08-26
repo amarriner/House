@@ -87,7 +87,7 @@ namespace House
             Name = "House";
             Description = "A plugin to allow players to define safe areas";
             Author = "amarriner";
-            Version = "0.3.4";
+            Version = "0.3.5";
             TDSMBuild = 31;
 
             plugin = this;
@@ -97,6 +97,7 @@ namespace House
             this.registerHook(Hooks.PLAYER_EDITSIGN);
             this.registerHook(Hooks.DOOR_STATECHANGE);
             this.registerHook(Hooks.TIME_CHANGED);
+            this.registerHook(Hooks.PLAYER_FLOWLIQUID);
 
             AddCommand("h")
                 .WithAccessLevel(AccessLevel.PLAYER)
@@ -151,6 +152,18 @@ namespace House
             }
             base.onDoorStateChange(Event);
              */
+        }
+
+        public override void onPlayerFlowLiquid(PlayerFlowLiquidEvent Event)
+        {
+            Player player = Server.GetPlayerByName(Event.Sender.Name);
+            if (IsInsideAnotherHouse(player.Name, (int)Event.Position.X, (int)Event.Position.Y))
+            {
+                Event.Cancelled = true;
+                player.sendMessage("You cannot use liquid inside someone else's house", chatColor);
+            }
+
+            base.onPlayerFlowLiquid(Event);
         }
 
         public override void onPlayerEditSign(PlayerEditSignEvent Event)

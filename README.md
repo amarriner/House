@@ -50,6 +50,9 @@ DOWNLOAD
 http://awbw.amarriner.com/terraria/House.zip
 
 CHANGELOG
+0.3.5
+Disallows liquid flow from within a house (can still flow in from outside!)
+
 0.3.4
 Moved locks to be on a per house basis rather than every house for a player
 Changed the way houses being made are stored by the plugin to attempt to avoid invalid houses being created
