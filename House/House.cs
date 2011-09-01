@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
+using System.Net.Sockets;
+
 using System.IO;
 using System.Drawing;
 
@@ -87,7 +89,7 @@ namespace House
             Name = "House";
             Description = "A plugin to allow players to define safe areas";
             Author = "amarriner";
-            Version = "0.3.5";
+            Version = "0.3.6";
             TDSMBuild = 31;
 
             plugin = this;
@@ -142,16 +144,17 @@ namespace House
 
         public override void onDoorStateChange(DoorStateChangeEvent Event)
         {
-            /*
-            Player player = Server.GetPlayerByName(Event.Sender.Name);
-            if (IsInsideAnotherHouse(player.Name, (int)Event.X, (int)Event.Y, CHECK_DOOR_LOCK) &&
-                !player.isInOpList())
-            {
-                Event.Cancelled = true;
-                player.sendMessage("You cannot open or close this door, it's locked and inside someone else's house", chatColor);
-            }
-            base.onDoorStateChange(Event);
-             */
+            //Player player = Server.GetPlayerByName(Event.Sender.Name);
+            //if (IsInsideAnotherHouse(player.Name, (int)Event.X, (int)Event.Y, CHECK_DOOR_LOCK) &&
+            //    !player.isInOpList())
+            //{
+            //    Event.Cancelled = true;
+            //    player.sendMessage("You cannot open or close this door, it's locked and inside someone else's house", chatColor);
+            //}
+            //else
+            //{
+            //    base.onDoorStateChange(Event);
+            //}
         }
 
         public override void onPlayerFlowLiquid(PlayerFlowLiquidEvent Event)

@@ -156,7 +156,7 @@ namespace House.Commands
                                     break;
                                 case "T":
                                 case "TELEPORT":
-                                    player.sendMessage("/teleport <housename>", House.plugin.chatColor);
+                                    player.sendMessage("/house teleport <housename>", House.plugin.chatColor);
                                     player.sendMessage("Teleport to your house called <housename>", House.plugin.chatColor);
                                     if (!House.plugin.properties.PlayersCanTeleport)
                                         player.sendMessage("Must be OP to run this", House.plugin.chatColor);
@@ -164,7 +164,7 @@ namespace House.Commands
                                     break;
                                 case "TS":
                                 case "TELEPORTSET":
-                                    player.sendMessage("/teleportset <housename>", House.plugin.chatColor);
+                                    player.sendMessage("/house teleportset <housename>", House.plugin.chatColor);
                                     player.sendMessage("Set the teleport point in your house called <housename>", House.plugin.chatColor);
                                     player.sendMessage("Abbreviations: ts", House.plugin.chatColor);
                                     break;
@@ -192,8 +192,8 @@ namespace House.Commands
                                     break;
                                 case "L":
                                 case "LOCK":
-                                    player.sendMessage("/house lock <object>", House.plugin.chatColor);
-                                    player.sendMessage("Locks all instances of the given object in your house", House.plugin.chatColor);
+                                    player.sendMessage("/house lock <house> <object>", House.plugin.chatColor);
+                                    player.sendMessage("Locks all instances of the given object in the given house", House.plugin.chatColor);
                                     player.sendMessage("Valid objects are: CHESTS, DOORS, and SIGNS", House.plugin.chatColor);
                                     player.sendMessage("Abbreviations: l", House.plugin.chatColor);
                                     break;
@@ -227,8 +227,8 @@ namespace House.Commands
                                     break;
                                 case "UL":
                                 case "UNLOCK":
-                                    player.sendMessage("/house unlock <object>", House.plugin.chatColor);
-                                    player.sendMessage("Unlocks all instances of the given object in your house", House.plugin.chatColor);
+                                    player.sendMessage("/house unlock <house> <object>", House.plugin.chatColor);
+                                    player.sendMessage("Unlocks all instances of the given object in the given house", House.plugin.chatColor);
                                     player.sendMessage("Valid objects are: CHESTS, DOORS, and SIGNS", House.plugin.chatColor);
                                     player.sendMessage("Abbreviations: ul", House.plugin.chatColor);
                                     break;
@@ -248,7 +248,7 @@ namespace House.Commands
                             player.sendMessage("VALID HOUSE COMMANDS:", House.plugin.chatColor);
                             player.sendMessage("/house allow, check, delete, disallow, end, list, lock,", House.plugin.chatColor);
                             player.sendMessage("opdelete, oplist, opteleport, opwhich, properties, set,", House.plugin.chatColor);
-                            player.sendMessage("start, teleport, teleportstart, unlock, which", House.plugin.chatColor);
+                            player.sendMessage("start, teleport, teleportset, unlock, which", House.plugin.chatColor);
                             player.sendMessage("Run /house ? <command> for more details on a particular command", House.plugin.chatColor);
                         }
                         break;
@@ -519,7 +519,7 @@ namespace House.Commands
                         {
                             houseName = House.plugin.GetHouseNameImInside(player);
                             if (houseName == null)
-                                player.sendMessage("You're not inside any of your houses", House.plugin.chatColor);
+                                player.sendMessage("You're not inside any houses", House.plugin.chatColor);
                             else
                                 player.sendMessage("You're inside the house called " + houseName, House.plugin.chatColor);
                         }
