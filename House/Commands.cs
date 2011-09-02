@@ -521,7 +521,7 @@ namespace House.Commands
                             if (houseName == null)
                                 player.sendMessage("You're not inside any houses", House.plugin.chatColor);
                             else
-                                player.sendMessage("You're inside the house called " + houseName, House.plugin.chatColor);
+                                player.sendMessage("You're inside " + houseName, House.plugin.chatColor);
                         }
                         break;
 

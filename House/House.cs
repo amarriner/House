@@ -89,7 +89,7 @@ namespace House
             Name = "House";
             Description = "A plugin to allow players to define safe areas";
             Author = "amarriner";
-            Version = "0.3.6";
+            Version = "0.3.6.1";
             TDSMBuild = 31;
 
             plugin = this;
@@ -301,7 +301,7 @@ namespace House
                 {
                     if (player.Position.X / 16 >= playerHouseCoord.TopLeft.X && player.Position.X / 16 <= playerHouseCoord.BottomRight.X &&
                         player.Position.Y / 16 >= playerHouseCoord.TopLeft.Y && player.Position.Y / 16 <= playerHouseCoord.BottomRight.Y)
-                        return playerHouse.PlayerName + "'s house " + playerHouseCoord.HouseName;
+                        return playerHouseCoord.HouseName + " owned by " + playerHouse.PlayerName;
                 }
             }
 

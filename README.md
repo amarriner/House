@@ -26,6 +26,9 @@ http://awbw.amarriner.com/terraria/House.zip
 
 CHANGELOG 
 
+0.3.6.1
+Improved wording for opwhich command
+
 0.3.6
 Fixed up some of the messaging text
 
