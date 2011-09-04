@@ -89,8 +89,8 @@ namespace House
             Name = "House";
             Description = "A plugin to allow players to define safe areas";
             Author = "amarriner";
-            Version = "0.3.6.1";
-            TDSMBuild = 31;
+            Version = "0.3.6.2";
+            TDSMBuild = 32;
 
             plugin = this;
 
@@ -123,7 +123,7 @@ namespace House
 
             properties = new Properties(pluginFolder + Path.DirectorySeparatorChar + "house.properties");
             properties.Load();
-            properties.Save();
+            properties.Save(true);
             maxArea = properties.MaxArea;
             minHeight = properties.MinHeight;
             maxHeight = properties.MaxHeight;

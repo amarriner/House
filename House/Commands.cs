@@ -78,9 +78,9 @@ namespace House.Commands
                         Teleporter.sendMessage("Teleporting to " + HouseName, House.plugin.chatColor);
                         PlayerHouseCoords pHC = House.plugin.playerHouses[House.plugin.GetPlayerHouseIndex(PlayerName)].Houses[houseIndex];
                         if (pHC.TeleportPoint.X > 0 && pHC.TeleportPoint.Y > 0)
-                            Teleporter.teleportTo(pHC.TeleportPoint.X * 16, pHC.TeleportPoint.Y * 16);
+                            Teleporter.Teleport(pHC.TeleportPoint.X * 16, pHC.TeleportPoint.Y * 16);
                         else
-                            Teleporter.teleportTo(((pHC.TopLeft.X * 16) + (pHC.BottomRight.X * 16)) / 2,
+                            Teleporter.Teleport(((pHC.TopLeft.X * 16) + (pHC.BottomRight.X * 16)) / 2,
                                                   ((pHC.TopLeft.Y * 16) + (pHC.BottomRight.Y * 16)) / 2);
                     }
                 }
@@ -552,7 +552,7 @@ namespace House.Commands
                                         {
                                             House.plugin.properties.MaxArea = value;
                                             House.plugin.maxArea = value;
-                                            House.plugin.properties.Save();
+                                            House.plugin.properties.Save(true);
                                             player.sendMessage("You updated MaxArea to " + value, House.plugin.chatColor);
                                         }
                                         else
@@ -564,7 +564,7 @@ namespace House.Commands
                                         {
                                             House.plugin.properties.MaxHouses = value;
                                             House.plugin.maxHouses = value;
-                                            House.plugin.properties.Save();
+                                            House.plugin.properties.Save(true);
                                             player.sendMessage("You updated MaxHouses to " + value, House.plugin.chatColor);
                                         }
                                         else
@@ -576,7 +576,7 @@ namespace House.Commands
                                         {
                                             House.plugin.properties.MinHeight = value;
                                             House.plugin.minHeight = value;
-                                            House.plugin.properties.Save();
+                                            House.plugin.properties.Save(true);
                                             player.sendMessage("You updated MinHeight to " + value, House.plugin.chatColor);
                                         }
                                         else
@@ -588,7 +588,7 @@ namespace House.Commands
                                         {
                                             House.plugin.properties.MaxHeight = value;
                                             House.plugin.maxHeight = value;
-                                            House.plugin.properties.Save();
+                                            House.plugin.properties.Save(true);
                                             player.sendMessage("You updated MaxHeight to " + value, House.plugin.chatColor);
                                         }
                                         else
@@ -602,7 +602,7 @@ namespace House.Commands
                                             {
                                                 House.plugin.properties.PlayersCanTeleport = Boolean.Parse(param2);
                                                 House.plugin.playersCanTeleport = Boolean.Parse(param2);
-                                                House.plugin.properties.Save();
+                                                House.plugin.properties.Save(true);
                                                 player.sendMessage("You updated PlayersCanTeleport to " + param2, House.plugin.chatColor);
                                             }
                                             else
@@ -623,7 +623,7 @@ namespace House.Commands
                                             {
                                                 House.plugin.properties.PlayersCanMakeHouses = Boolean.Parse(param2);
                                                 House.plugin.playersCanMakeHouses = Boolean.Parse(param2);
-                                                House.plugin.properties.Save();
+                                                House.plugin.properties.Save(true);
                                                 player.sendMessage("You updated PlayersCanMakeHouses to " + param2, House.plugin.chatColor);
                                             }
                                             else
