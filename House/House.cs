@@ -89,8 +89,8 @@ namespace House
             Name = "House";
             Description = "A plugin to allow players to define safe areas";
             Author = "amarriner";
-            Version = "0.3.6.2";
-            TDSMBuild = 32;
+            Version = "0.3.6.3";
+            TDSMBuild = 33;
 
             plugin = this;
 
@@ -150,10 +150,7 @@ namespace House
             //{
             //    Event.Cancelled = true;
             //    player.sendMessage("You cannot open or close this door, it's locked and inside someone else's house", chatColor);
-            //}
-            //else
-            //{
-            //    base.onDoorStateChange(Event);
+            //    return;
             //}
         }
 

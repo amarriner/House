@@ -127,6 +127,12 @@ namespace House.Commands
                                     player.sendMessage("Disallow <player> access to build in <house>", House.plugin.chatColor);
                                     player.sendMessage("Abbreviations: ds", House.plugin.chatColor);
                                     break;
+                                case "CA":
+                                case "CANCEL":
+                                    player.sendMessage("/house cancel", House.plugin.chatColor);
+                                    player.sendMessage("Cancels a /house start or /house end command", House.plugin.chatColor);
+                                    player.sendMessage("Abbreviations: ca", House.plugin.chatColor);
+                                    break;
                                 case "C":
                                 case "CHECK":
                                     player.sendMessage("/house check", House.plugin.chatColor);
@@ -246,7 +252,7 @@ namespace House.Commands
                         else
                         {
                             player.sendMessage("VALID HOUSE COMMANDS:", House.plugin.chatColor);
-                            player.sendMessage("/house allow, check, delete, disallow, end, list, lock,", House.plugin.chatColor);
+                            player.sendMessage("/house allow, cancel, check, delete, disallow, end, list, lock,", House.plugin.chatColor);
                             player.sendMessage("opdelete, oplist, opteleport, opwhich, properties, set,", House.plugin.chatColor);
                             player.sendMessage("start, teleport, teleportset, unlock, which", House.plugin.chatColor);
                             player.sendMessage("Run /house ? <command> for more details on a particular command", House.plugin.chatColor);
@@ -331,6 +337,14 @@ namespace House.Commands
                     case "C":
                     case "CHECK":
                         player.PluginData["check"] = true;
+                        break;
+
+                    // CANCEL
+                    case "CA":
+                    case "CANCEL":
+                        player.PluginData["starthouse"] = false;
+                        player.PluginData["endhouse"] = false;
+                        player.sendMessage("Cancelled house command", House.plugin.chatColor);
                         break;
 
                     // DELETE

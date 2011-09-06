@@ -9,6 +9,7 @@ This plugin probably works best with something like the Restrict plugin where ea
 ##COMMANDS
 * **/house allow <house> <player>** - Allow <player> the ability to build in <house>
 * **/house check** - Use the pickaxe on a block and get the coordinates of that block
+* **/house cancel** - Cancel either a /house start or a /house end command
 * **/house delete <house>** - Deletes the given player's house
 * **/house disallow <house> <player>** - Remove <player> from allowed list in <house>
 * **/house start <house>** - Use the pickaxe on a block to set the top left corner of your house
@@ -49,6 +50,11 @@ https://github.com/amarriner/House
 http://awbw.amarriner.com/terraria/House.zip
 
 ##CHANGELOG
+
+**0.3.6.3**
+
+* Added /house cancel
+* Updated plugin for TDSM Build 33
 
 **0.3.6.2**
 
