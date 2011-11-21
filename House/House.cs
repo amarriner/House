@@ -90,8 +90,8 @@ namespace House
             Name = "House";
             Description = "A plugin to allow players to define safe areas";
             Author = "amarriner";
-            Version = "0.3.6.3";
-            TDSMBuild = 33;
+            Version = "0.3.6.4";
+            TDSMBuild = 36;
         }
 
         protected override void Initialized(object state)
