@@ -98,7 +98,6 @@ namespace House
         {
             plugin = this;
             runsaveThread = true;
-            startSaveThread();
 
             AddCommand("h")
                 .WithAccessLevel(AccessLevel.PLAYER)
@@ -129,7 +128,7 @@ namespace House
             playersCanMakeHouses = properties.PlayersCanMakeHouses;
 
             LoadHouseData();
-
+            startSaveThread();
             Log(base.Name + " enabled.");
         }
 
