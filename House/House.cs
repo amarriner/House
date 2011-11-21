@@ -97,8 +97,6 @@ namespace House
         protected override void Initialized(object state)
         {
             plugin = this;
-            runsaveThread = true;
-            startSaveThread();
 
             AddCommand("h")
                 .WithAccessLevel(AccessLevel.PLAYER)
@@ -129,7 +127,7 @@ namespace House
             playersCanMakeHouses = properties.PlayersCanMakeHouses;
 
             LoadHouseData();
-
+            startSaveThread();
             Log(base.Name + " enabled.");
         }
 
@@ -355,6 +353,7 @@ namespace House
         // so here is a thread that does the exact same thing
         public void startSaveThread()
         {
+            runsaveThread = true;
             saveThread = new Thread(save); //calls the method below
             saveThread.Start();
 
