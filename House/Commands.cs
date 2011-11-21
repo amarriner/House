@@ -13,7 +13,7 @@ using Terraria_Server.Logging;
 using Terraria_Server.RemoteConsole;
 using Terraria_Server.WorldMod;
 using Terraria_Server.Definitions;
-using Terraria_Server.Plugin;
+using Terraria_Server.Plugins;
 
 namespace House.Commands
 {
@@ -89,11 +89,11 @@ namespace House.Commands
             }
         }
 
-        public static void house(Server server, ISender sender, ArgumentList args)
+        public static void house(ISender sender, ArgumentList args)
         {
             String cmd, param, param2, houseName;
             int value, houseIndex;
-            Player player = server.GetPlayerByName(sender.Name);
+            Player player = Server.GetPlayerByName(sender.Name);
             PlayerHouses playerHouse;
             int playerHouseIndex;
             if (args.TryGetString(0, out cmd))
