@@ -373,7 +373,7 @@ namespace House
         {
             while (runsaveThread)
             {
-                Log("Saving house.xml");
+                //Log("Saving house.xml");
                 SaveHouseData();
                 Thread.Sleep(10000);
             }
