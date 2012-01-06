@@ -10,13 +10,13 @@ using System.IO;
 using System.Drawing;
 
 using Terraria_Server;
-using Terraria_Server.Plugin;
+using Terraria_Server.Plugins;
 using Terraria_Server.Collections;
 using Terraria_Server.Commands;
-using Terraria_Server.Events;
 using Terraria_Server.Logging;
 
 using System.Xml;
+using System.Threading;
 
 namespace House
 {
@@ -55,7 +55,7 @@ namespace House
         }
     }
 
-    public class House : Plugin
+    public class House : BasePlugin
     {
         public static int CHECK_CHEST_LOCK = 1;
         public static int CHECK_DOOR_LOCK = 2;
@@ -82,24 +82,21 @@ namespace House
         public List<PlayerHouses> playerHouses = new List<PlayerHouses>();
         public string pluginFolder;
 
-        public double lastTime;
+        public Thread saveThread;
+        public bool runsaveThread;
 
-        public override void Load()
+        public House()
         {
             Name = "House";
             Description = "A plugin to allow players to define safe areas";
             Author = "amarriner";
-            Version = "0.3.6.3";
-            TDSMBuild = 33;
+            Version = "0.3.6.4";
+            TDSMBuild = 36;
+        }
 
+        protected override void Initialized(object state)
+        {
             plugin = this;
-
-            this.registerHook(Hooks.PLAYER_TILECHANGE);
-            this.registerHook(Hooks.PLAYER_CHEST);
-            this.registerHook(Hooks.PLAYER_EDITSIGN);
-            this.registerHook(Hooks.DOOR_STATECHANGE);
-            this.registerHook(Hooks.TIME_CHANGED);
-            this.registerHook(Hooks.PLAYER_FLOWLIQUID);
 
             AddCommand("h")
                 .WithAccessLevel(AccessLevel.PLAYER)
@@ -114,10 +111,8 @@ namespace House
                 .Calls(Commands.Commands.house);
         }
 
-        public override void Enable()
+        protected override void Enabled()
         {
-            lastTime = Server.time;
-
             pluginFolder = Statics.PluginPath + Path.DirectorySeparatorChar + "House";
             CreateDirectory(pluginFolder);
 
@@ -132,17 +127,25 @@ namespace House
             playersCanMakeHouses = properties.PlayersCanMakeHouses;
 
             LoadHouseData();
-
-            Program.tConsole.WriteLine(base.Name + " enabled.");
+            startSaveThread();
+            Log(base.Name + " enabled.");
         }
 
-        public override void Disable()
+        protected override void Disabled()
         {
+            stopSaveThread();
             SaveHouseData();
-            Program.tConsole.WriteLine(base.Name + " disabled.");
+            Log(base.Name + " disabled.");
         }
 
-        public override void onDoorStateChange(DoorStateChangeEvent Event)
+        // to make things simpler, hopefully
+        public void Log(string message)
+        {
+            ProgramLog.Plugin.Log(message);
+        }
+
+        [Hook(HookOrder.EARLY)]
+        void OnDoorStateChanged(ref HookContext ctx, ref HookArgs.DoorStateChanged args)
         {
             //Player player = Server.GetPlayerByName(Event.Sender.Name);
             //if (IsInsideAnotherHouse(player.Name, (int)Event.X, (int)Event.Y, CHECK_DOOR_LOCK) &&
@@ -154,45 +157,49 @@ namespace House
             //}
         }
 
-        public override void onPlayerFlowLiquid(PlayerFlowLiquidEvent Event)
+        [Hook(HookOrder.LATE)]
+        void OnLiquidFlow(ref HookContext ctx, ref HookArgs.LiquidFlowReceived args)
         {
-            Player player = Server.GetPlayerByName(Event.Sender.Name);
-            if (IsInsideAnotherHouse(player.Name, (int)Event.Position.X, (int)Event.Position.Y))
+            Player player = Server.GetPlayerByName(ctx.Sender.Name);
+            if (IsInsideAnotherHouse(player.Name, (int)args.X, (int)args.Y))
             {
-                Event.Cancelled = true;
+                ctx.SetResult(HookResult.IGNORE);
                 player.sendMessage("You cannot use liquid inside someone else's house", chatColor);
             }
 
-            base.onPlayerFlowLiquid(Event);
+            //base.onPlayerFlowLiquid(Event);
         }
 
-        public override void onPlayerEditSign(PlayerEditSignEvent Event)
+        [Hook(HookOrder.EARLY)]
+        void OnSignTextSet(ref HookContext ctx, ref HookArgs.SignTextSet args)
         {
-            Player player = Server.GetPlayerByName(Event.Sender.Name);
-            if (IsInsideAnotherHouse(player.Name, (int)Event.Sign.x, (int)Event.Sign.y, CHECK_SIGN_LOCK) &&
+            Player player = Server.GetPlayerByName(ctx.Sender.Name);
+            if (IsInsideAnotherHouse(player.Name, (int)args.X, (int)args.Y, CHECK_SIGN_LOCK) &&
                 !player.Op)
             {
-                Event.Cancelled = true;
+                ctx.SetResult(HookResult.RECTIFY);
                 player.sendMessage("You cannot edit this sign, it's locked and inside someone else's house", chatColor);
             }
-            base.onPlayerEditSign(Event);
+            //base.onPlayerEditSign(Event);
         }
 
-        public override void onPlayerOpenChest(PlayerChestOpenEvent Event)
+        [Hook(HookOrder.EARLY)]
+        void OnChestOpen(ref HookContext ctx, ref HookArgs.ChestOpenReceived args)
         {
-            Player player = Server.GetPlayerByName(Event.Sender.Name);
-            if (IsInsideAnotherHouse(player.Name, (int)Server.chest[Event.ID].x, (int)Server.chest[Event.ID].y, CHECK_CHEST_LOCK) &&
+            Player player = Server.GetPlayerByName(ctx.Sender.Name);
+            if (IsInsideAnotherHouse(player.Name, (int)Main.chest[args.ChestIndex].x, (int)Main.chest[args.ChestIndex].y, CHECK_CHEST_LOCK) &&
                 !player.Op)
             {
-                Event.Cancelled = true;
+                ctx.SetResult(HookResult.IGNORE);
                 player.sendMessage("You cannot open this chest, it's locked and inside someone else's house", chatColor);
             }
-            base.onPlayerOpenChest(Event);
+            //base.onPlayerOpenChest(Event);
         }
 
-        public override void onPlayerTileChange(PlayerTileChangeEvent Event)
+        [Hook(HookOrder.EARLY)]
+        void OnAlter(ref HookContext ctx, ref HookArgs.PlayerWorldAlteration args)
         {
-            Player player = Server.GetPlayerByName(Event.Sender.Name);
+            Player player = Server.GetPlayerByName(ctx.Sender.Name);
             bool starthouse = player.PluginData.ContainsKey("starthouse") ? (bool)player.PluginData["starthouse"] : false;
             bool endhouse = player.PluginData.ContainsKey("endhouse") ? (bool)player.PluginData["endhouse"] : false;
             bool check = player.PluginData.ContainsKey("check") ? (bool)player.PluginData["check"] : false;
@@ -204,11 +211,11 @@ namespace House
             {
                 String NodeName = starthouse ? "topleft" : "bottomright";
                 String cornerDesc = starthouse ? "top-left" : "bottom-right";
-                Event.Cancelled = true;
+                ctx.SetResult(HookResult.RECTIFY);
 
                 if (GetHouseNameImInside(player) == null)
                 {
-                    UpdateCoordsForPlayer(player.Name, (int)Event.Position.X, (int)Event.Position.Y, houseIndex);
+                    UpdateCoordsForPlayer(player.Name, (int)args.X, (int)args.Y, houseIndex);
                     player.sendMessage("You've set the " + cornerDesc + " corner of house " + houseName, chatColor);
                     player.PluginData["starthouse"] = false;
                     player.PluginData["endhouse"] = false;
@@ -219,29 +226,29 @@ namespace House
                 }
             } 
 
-            else if (IsInsideAnotherHouse(player.Name, (int)Event.Position.X, (int)Event.Position.Y) && ! starthouse && ! endhouse &&
+            else if (IsInsideAnotherHouse(player.Name, (int)args.X, (int)args.Y) && ! starthouse && ! endhouse &&
                 !player.Op)
             {
-                Event.Cancelled = true;
+                ctx.SetResult(HookResult.RECTIFY);
                 player.sendMessage("You're trying to build inside someone's house--this is not allowed", chatColor);
             }
 
             else if (check)
             {
-                Event.Cancelled = true;
+                ctx.SetResult(HookResult.RECTIFY);
                 player.PluginData["check"] = false;
-                player.sendMessage("The block you just clicked on is at " + (int)Event.Position.X + "," + (int)Event.Position.Y, chatColor);
+                player.sendMessage("The block you just clicked on is at " + (int)args.X + "," + (int)args.Y, chatColor);
             }
 
             else if (teleportSet)
             {
-                if (GetMyHouseNamePositionInside(player.Name, (int)Event.Position.X, (int)Event.Position.Y) == (string)player.PluginData["teleporthouse"])
+                if (GetMyHouseNamePositionInside(player.Name, (int)args.X, (int)args.Y) == (string)player.PluginData["teleporthouse"])
                 {
                     int playerIndex = GetPlayerHouseIndex(player.Name);
                     houseIndex = GetHouseCoordsIndexByName(player.Name, (string)player.PluginData["teleporthouse"]);
                     PlayerHouseCoords tempCoords = playerHouses[playerIndex].Houses[houseIndex];
-                    tempCoords.TeleportPoint.X = (int)Event.Position.X;
-                    tempCoords.TeleportPoint.Y = (int)Event.Position.Y;
+                    tempCoords.TeleportPoint.X = (int)args.X;
+                    tempCoords.TeleportPoint.Y = (int)args.Y;
                     playerHouses[playerIndex].Houses[houseIndex] = tempCoords;
                     player.sendMessage("Teleport point set for house " + (string)player.PluginData["teleporthouse"], chatColor);
                 }
@@ -251,7 +258,7 @@ namespace House
                 player.PluginData["teleportset"] = false;
             }
 
-            base.onPlayerTileChange(Event);
+            //base.onPlayerTileChange(Event);
         }
 
         public string GetMyHouseNameImInside(string PlayerName)
@@ -342,15 +349,36 @@ namespace House
             return false;
         }
 
-        public override void onTimeChange(TimeChangedEvent Event)
+        // onTimeChange / TimeChangedEvent is no longer an event
+        // so here is a thread that does the exact same thing
+        public void startSaveThread()
         {
-            if (Math.Abs(Event.GetTime - lastTime) > 10000)
+            runsaveThread = true;
+            saveThread = new Thread(save); //calls the method below
+            saveThread.Start();
+
+            while (!saveThread.IsAlive) ; //waits for the thread to start
+
+        }
+
+        public void stopSaveThread()
+        {
+            runsaveThread = false;
+            while (saveThread.IsAlive) ; // waits for the thread to stop
+            saveThread = null;
+        }
+
+        //what the thread runs
+        public void save()
+        {
+            while (runsaveThread)
             {
-                Program.tConsole.WriteLine("Saving house.xml");
+                //Log("Saving house.xml");
                 SaveHouseData();
-                lastTime = Event.GetTime;
+                Thread.Sleep(10000);
             }
- 	        base.onTimeChange(Event);
+
+            //base.onTimeChange(Event);
         }
 
         public bool CreatePlayerHouse(string PlayerName, int houseIndex = 0)
@@ -491,7 +519,7 @@ namespace House
                     playerHouseCoords.TopLeft.Y > playerHouseCoords.BottomRight.Y)
                 {
                     Server.GetPlayerByName(PlayerName).sendMessage("Top right corner is greater than bottom left, deleting house " +
-                        playerHouseCoords.BottomRight.X + "," + playerHouseCoords.BottomRight.Y, chatColor);
+                        playerHouseCoords.BottomRight.X + "," + playerHouseCoords.BottomRight.Y, chatColorRed);
                     playerHouse.Houses.RemoveAt(houseIndex);
                 }
 
@@ -500,23 +528,37 @@ namespace House
                     (playerHouseCoords.BottomRight.Y - playerHouseCoords.TopLeft.Y);
                 if (houseArea > maxArea)
                 {
-                    Server.GetPlayerByName(PlayerName).sendMessage("Your house exceeds the maximum area, deleting house", chatColor);
+                    Server.GetPlayerByName(PlayerName).sendMessage("Your house exceeds the maximum area, deleting house", chatColorRed);
                     playerHouse.Houses.RemoveAt(houseIndex);
                 }
 
                 // Check min height
                 if (playerHouseCoords.BottomRight.Y < minHeight)
                 {
-                    Server.GetPlayerByName(PlayerName).sendMessage("Your house is below the minimum depth level, deleting house", chatColor);
+                    Server.GetPlayerByName(PlayerName).sendMessage("Your house is below the minimum depth level, deleting house", chatColorRed);
                     playerHouse.Houses.RemoveAt(houseIndex);
                 }
 
                 // Check max height
                 if (playerHouseCoords.BottomRight.Y > maxHeight)
                 {
-                    Server.GetPlayerByName(PlayerName).sendMessage("Your house is above the maximum depth level, deleting house", chatColor);
+                    Server.GetPlayerByName(PlayerName).sendMessage("Your house is above the maximum depth level, deleting house", chatColorRed);
                     playerHouse.Houses.RemoveAt(houseIndex);
                 }
+
+		// Check if house contains another house
+		Point TL = playerHouseCoords.TopLeft;
+		Point BR = playerHouseCoords.BottomRight;
+		foreach (PlayerHouses otherHouse in playerHouses)
+		{
+                   if (BR.Y >= otherCoords.TopLeft.Y || TL.Y <= otherCoords.BottomRight.Y || BR.X >= otherCoords.TopLeft.X || TL.X <= otherCoords.BottomRight.X)
+                   { 
+                       Server.GetPlayerByName(PlayerName).sendMessage("Your house collides with another house, deleting house", chatColorRed);
+                       playerHouse.Houses.RemoveAt(houseIndex);
+                       break; //no need to check the rest of them
+                   }
+		}
+		// end house-within-a-house-check
             }
         }
 
@@ -538,7 +580,7 @@ namespace House
                 node = houseXML.CreateNode(XmlNodeType.Element, "players", xmlNamespace);
                 houseXML.AppendChild(node);
                 houseXML.Save(xmlFilename);
-                Program.tConsole.WriteLine(houseXML.InnerText);
+                Log(houseXML.InnerText);
             }
 
             houseXML.Load(xmlFilename);
