@@ -519,7 +519,7 @@ namespace House
                     playerHouseCoords.TopLeft.Y > playerHouseCoords.BottomRight.Y)
                 {
                     Server.GetPlayerByName(PlayerName).sendMessage("Top right corner is greater than bottom left, deleting house " +
-                        playerHouseCoords.BottomRight.X + "," + playerHouseCoords.BottomRight.Y, chatColor);
+                        playerHouseCoords.BottomRight.X + "," + playerHouseCoords.BottomRight.Y, chatColorRed);
                     playerHouse.Houses.RemoveAt(houseIndex);
                 }
 
@@ -528,23 +528,42 @@ namespace House
                     (playerHouseCoords.BottomRight.Y - playerHouseCoords.TopLeft.Y);
                 if (houseArea > maxArea)
                 {
-                    Server.GetPlayerByName(PlayerName).sendMessage("Your house exceeds the maximum area, deleting house", chatColor);
+                    Server.GetPlayerByName(PlayerName).sendMessage("Your house exceeds the maximum area, deleting house", chatColorRed);
                     playerHouse.Houses.RemoveAt(houseIndex);
                 }
 
                 // Check min height
                 if (playerHouseCoords.BottomRight.Y < minHeight)
                 {
-                    Server.GetPlayerByName(PlayerName).sendMessage("Your house is below the minimum depth level, deleting house", chatColor);
+                    Server.GetPlayerByName(PlayerName).sendMessage("Your house is below the minimum depth level, deleting house", chatColorRed);
                     playerHouse.Houses.RemoveAt(houseIndex);
                 }
 
                 // Check max height
                 if (playerHouseCoords.BottomRight.Y > maxHeight)
                 {
-                    Server.GetPlayerByName(PlayerName).sendMessage("Your house is above the maximum depth level, deleting house", chatColor);
+                    Server.GetPlayerByName(PlayerName).sendMessage("Your house is above the maximum depth level, deleting house", chatColorRed);
                     playerHouse.Houses.RemoveAt(houseIndex);
                 }
+
+		// Check if house contains another house
+		Point TL = playerHouseCoords.TopLeft;
+		Point BR = playerHouseCoords.BottomRight;
+		foreach (PlayerHouses otherHouse in playerHouses)
+		{
+                   if (BR.Y < otherCoords.TopLeft.Y)
+                       continue;
+                   if (TL.Y > otherCoords.BottomRight.Y)
+                       continue;
+                   if (BR.X < otherCoords.TopLeft.X)
+                       continue;
+                   if (TL.X > otherCoords.BottomRight.X)
+                       continue;
+ 
+                   Server.GetPlayerByName(PlayerName).sendMessage("Your house collides with another house, deleting house", chatColorRed);
+                   playerHouse.Houses.RemoveAt(houseIndex);
+		}
+		// end house-within-a-house-check
             }
         }
 
