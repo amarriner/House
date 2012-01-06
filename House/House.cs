@@ -555,7 +555,8 @@ namespace House
                    { 
                        Server.GetPlayerByName(PlayerName).sendMessage("Your house collides with another house, deleting house", chatColorRed);
                        playerHouse.Houses.RemoveAt(houseIndex);
-		   }
+                       break; //no need to check the rest of them
+                   }
 		}
 		// end house-within-a-house-check
             }
