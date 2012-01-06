@@ -551,17 +551,11 @@ namespace House
 		Point BR = playerHouseCoords.BottomRight;
 		foreach (PlayerHouses otherHouse in playerHouses)
 		{
-                   if (BR.Y < otherCoords.TopLeft.Y)
-                       continue;
-                   if (TL.Y > otherCoords.BottomRight.Y)
-                       continue;
-                   if (BR.X < otherCoords.TopLeft.X)
-                       continue;
-                   if (TL.X > otherCoords.BottomRight.X)
-                       continue;
- 
-                   Server.GetPlayerByName(PlayerName).sendMessage("Your house collides with another house, deleting house", chatColorRed);
-                   playerHouse.Houses.RemoveAt(houseIndex);
+                   if (BR.Y >= otherCoords.TopLeft.Y || TL.Y <= otherCoords.BottomRight.Y || BR.X >= otherCoords.TopLeft.X || TL.X <= otherCoords.BottomRight.X)
+                   { 
+                       Server.GetPlayerByName(PlayerName).sendMessage("Your house collides with another house, deleting house", chatColorRed);
+                       playerHouse.Houses.RemoveAt(houseIndex);
+		   }
 		}
 		// end house-within-a-house-check
             }
