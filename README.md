@@ -51,6 +51,10 @@ http://awbw.amarriner.com/terraria/House.zip
 
 ##CHANGELOG
 
+**0.3.6.4**
+
+* Updated plugin for TDSM Build 36 (elevatorguy)
+
 **0.3.6.3**
 
 * Added /house cancel
